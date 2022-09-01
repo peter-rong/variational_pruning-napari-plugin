@@ -1,0 +1,19 @@
+name: skeleton-plugin
+contributions:
+  commands:
+    - id: skeleton-plugin.say_hi
+      title: Say hello, world!
+      python_name: napari_hello:show_hello_message
+    - id: skeleton-plugin.mainalgo
+      title: MainAlgo
+      python_name: skeleton_plugin.mywidget:MainWidget
+    - id: skeleton-plugin.widget
+      title: Widget
+      python_name: skeleton_plugin.mywidget:DebugWidget
+
+
+  widgets:
+    - command: skeleton-plugin.mainalgo
+      display_name: Main
+    - command: skeleton-plugin.widget
+      display_name: Debug Draw Config
