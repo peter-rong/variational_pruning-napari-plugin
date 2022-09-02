@@ -187,15 +187,17 @@ class AnglePruneState(st.State):
         peConfig.pointConfig.face_color = point_colors
         peConfig.edgeConfig.edge_color = edge_colors
 
+        tRec().stamp("cluster algorithm by angles")
         ds.Display.current().draw_layer(algo_st().graph, peConfig, ds.angle)
-        tRec().stamp("cluster by angles")
+        tRec().stamp("draw cluster by angles")
 
         centroid_peConfig.pointConfig.edge_color = centroid_points_color
         centroid_peConfig.pointConfig.face_color = centroid_points_color
         centroid_peConfig.edgeConfig.edge_color = "purple"
 
+        tRec().stamp("before_draw_PCST")
         ds.Display.current().draw_layer(centroid_graph, centroid_peConfig, ds.pcst)
-        tRec().stamp("draw_PCST")
+        tRec().stamp("draw_initial_PCST")
 
         initial_tree = tree.Tree(centroid_graph.points, centroid_graph.edgeIndex, reward_list, cost_list)
         result_tree = treealgorithm.Algorithm(initial_tree).execute()
@@ -206,12 +208,11 @@ class AnglePruneState(st.State):
 
         skeleton_result_graph = graph.cluster_to_skeleton(PCST_result_graph, point_map, point_pair_map)
 
+        tRec().stamp("PCST_solver")
         ds.Display.current().draw_layer(PCST_result_graph, PCST_result_peConfig, ds.pcstResult)
-
         tRec().stamp("draw_PCST_result")
 
         skeleton_result_peConfig = ma.get_skeleton_result_config(get_size())
 
         ds.Display.current().draw_layer(skeleton_result_graph, skeleton_result_peConfig, ds.skeletonResult)
-
         tRec().stamp("draw_skeleton_result")

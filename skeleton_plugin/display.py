@@ -115,9 +115,6 @@ class Display:
             l.remove()
         self.layers.clear()
 
-    
-    
-
 class GraphLayer:
     
     def __init__(self, name : str, pl : napari.layers.Points, el : napari.layers.Shapes):

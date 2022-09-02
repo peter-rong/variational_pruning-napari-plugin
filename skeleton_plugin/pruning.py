@@ -8,6 +8,7 @@ Created on Mon Feb 21 13:28:18 2022
 from .graph import Graph, dist2D, prune_graph, getCentroid, rgb_to_hex
 from queue import PriorityQueue
 import sys
+from collections import deque
 from typing import Union
 import numpy as np
 import matplotlib.pyplot as plt
@@ -400,7 +401,7 @@ class AnglePruningAlgo(PruningAlgo):
             point_dict_key = list()
             point_dict_value = list()
 
-            if c[0].segval == 10:
+            if c[0].segval == c[0].length * 10:
                 non_negative_clusters.append(c)
                 point_list.append(getCentroid(c))
                 point_dict_key = tuple(getCentroid(c))
@@ -427,7 +428,6 @@ class AnglePruningAlgo(PruningAlgo):
 
             else:
                 negative_clusters.append(c)
-
 
         for j in junctions:
             point_list.append(j.point)
@@ -513,9 +513,9 @@ class AnglePruningAlgo(PruningAlgo):
 
         for p in self.npGraph.paths:
             if p.isCore:
-                p.segval = 10 #big enough
+                p.segval = 10*p.length #big enough
             else:
-                p.segval = p.theta - thresh
+                p.segval = (p.theta - thresh)*p.length
 
         path_to_neglect = self.npGraph.get_negative_degree_one_path()
         while len(path_to_neglect) > 0:
@@ -535,14 +535,14 @@ class AnglePruningAlgo(PruningAlgo):
                 continue
             path_type = 'core+pos'
             cluster_count += 1
-            queue = []
+            queue = deque()
             curr_set = list()
             queue.append(path)
             path.isTaken = True
             path.clusterNumber = cluster_count
 
             while len(queue) > 0:
-                curr_path = queue.pop(0)
+                curr_path = queue.popleft()
                 curr_set.append(curr_path)
 
                 first_node = curr_path.one
@@ -576,7 +576,7 @@ class AnglePruningAlgo(PruningAlgo):
                 continue
             cluster_count += 1
             path_type = ''
-            queue = []
+            queue = deque()
             curr_set = list()
             if path.isCore:
                 print('This should not ever print')
@@ -590,7 +590,7 @@ class AnglePruningAlgo(PruningAlgo):
             path.clusterNumber = cluster_count
 
             while len(queue) > 0:
-                curr_path = queue.pop(0)
+                curr_path = queue.popleft()
                 curr_set.append(curr_path)
 
                 first_node = curr_path.one
@@ -611,7 +611,7 @@ class AnglePruningAlgo(PruningAlgo):
 
             color_total_value = 0
             for path in curr_set:
-                color_total_value += path.segval
+                color_total_value += path.segval/path.length
 
             for path in curr_set:
                 path.colorvalue = color_total_value/len(curr_set)
@@ -653,10 +653,10 @@ class AnglePruningAlgo(PruningAlgo):
 
         for c in clusters:
             # positive or core node
-            if c[0].colorvalue > 0:
+            if c[0].colorvalue/c[0].length > 0:
                 is_core = False
                 point_name = ''
-                if c[0].colorvalue == 10:
+                if c[0].colorvalue/c[0].length == 10:
                     is_core = True
                     point_name = 'core'
                 else:
