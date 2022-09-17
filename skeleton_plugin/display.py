@@ -8,6 +8,7 @@ Created on Wed Feb  9 15:46:23 2022
 import napari
 from . import graph
 from . import drawing
+from .appstates import tRec
 
 boundary = "boundary"
 voronoi = "voronoi"
@@ -80,6 +81,15 @@ class Display:
     def set_config(self, con : DisplayConfig):
         self.config = con
 
+    #method for just drawing edge layer
+    def draw_edge_layer(self, g : graph.Graph, config : drawing.PointEdgeConfig, name : str) :
+        if self.config.flag_raise(name):
+            edge_layer = self.find(name)
+            if edge_layer is None:
+                edge_layer = EdgeLayer.create(name)
+            edge_layer.draw(g,config)
+            self.layers.append(edge_layer)
+
     def draw_layer(self, g : graph.Graph, config : drawing.PointEdgeConfig, name : str) :
         if self.config.flag_raise(name): 
             graph_layer = self.find(name)
@@ -114,6 +124,49 @@ class Display:
         for l in self.layers:
             l.remove()
         self.layers.clear()
+
+
+class EdgeLayer:
+
+    def __init__(self, name: str, el: napari.layers.Shapes):
+        self.name = name
+        self.edgeLayer = el
+
+    def show(self, isShow: bool):
+        self.edgeLayer.visible = isShow
+
+    def remove(self):
+        viewer = Display.current().viewer
+        if self.edgeLayer in viewer.layers:
+            viewer.layers.remove(self.edgeLayer)
+
+    def draw(self, g: graph.Graph, config: drawing.PointEdgeConfig):
+        tRec().stamp("start drawing")
+        ec = config.edgeConfig
+        self.edgeLayer.shape_type = 'line'
+        self.edgeLayer.data = g.get_edge_cord()
+        #print('There is a total number of ' + str(g.get_edge_cord.size) +'edges')
+        #self.edgeLayer.edge_width = ec.size
+
+        if self.edgeLayer.visible:
+            pass
+            #self.edgeLayer.edge_color = ec.edge_color
+            #self.edgeLayer.face_color = ec.face_color
+
+
+        self.edgeLayer.selected_data = set()
+        tRec().stamp("end drawing")
+        # self.pointLayer.refresh()
+
+    def create(name: str):
+        viewer = Display.current().viewer
+
+        ename = name + " : " + "edges"
+        shapeLayer = napari.layers.Shapes(name=ename)
+
+        viewer.add_layer(shapeLayer)
+        return EdgeLayer(name=name, el=shapeLayer)
+
 
 class GraphLayer:
     

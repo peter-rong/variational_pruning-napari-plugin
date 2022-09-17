@@ -214,5 +214,7 @@ class AnglePruneState(st.State):
 
         skeleton_result_peConfig = ma.get_skeleton_result_config(get_size())
 
-        ds.Display.current().draw_layer(skeleton_result_graph, skeleton_result_peConfig, ds.skeletonResult)
+        ds.Display.current().draw_edge_layer(skeleton_result_graph, skeleton_result_peConfig, ds.skeletonResult)
+        #ds.Display.current().draw_layer(skeleton_result_graph, skeleton_result_peConfig, ds.skeletonResult)
         tRec().stamp("draw_skeleton_result")
+
