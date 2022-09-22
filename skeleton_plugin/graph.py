@@ -109,17 +109,18 @@ def cluster_to_skeleton(graph:Graph, point_map, point_pair_map) -> Graph:
         point_tuple = tuple(point)
 
         if point_tuple not in point_map:
-            print('wrong')
-            break
+            new_points.append(list(point))
+            #print('wrong')
+            #break
+        else:
+            for point_pair in point_map[point_tuple]:
+                point_pair = [list(point_pair[0]), list(point_pair[1])]
+                if point_pair[0] not in new_points:
+                    new_points.append(point_pair[0])
+                if point_pair[1] not in new_points:
+                    new_points.append(point_pair[1])
 
-        for point_pair in point_map[point_tuple]:
-            point_pair = [list(point_pair[0]), list(point_pair[1])]
-            if point_pair[0] not in new_points:
-                new_points.append(point_pair[0])
-            if point_pair[1] not in new_points:
-                new_points.append(point_pair[1])
-
-            new_edges.append([new_points.index(point_pair[0]), new_points.index(point_pair[1])])
+                new_edges.append([new_points.index(point_pair[0]), new_points.index(point_pair[1])])
 
 
     for edge_cord in graph.get_cord_as_tuples():
@@ -132,7 +133,7 @@ def cluster_to_skeleton(graph:Graph, point_map, point_pair_map) -> Graph:
                 new_points.append(point_pair[1])
 
             new_edges.append([new_points.index(point_pair[0]),new_points.index(point_pair[1])])
-
+    #ma.SkeletonApp.inst().timer.stamp("before initialize graph")
     return Graph(new_points,new_edges)
 
 class VoronoiDiagram:

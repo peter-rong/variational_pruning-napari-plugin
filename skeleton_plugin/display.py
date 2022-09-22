@@ -8,7 +8,6 @@ Created on Wed Feb  9 15:46:23 2022
 import napari
 from . import graph
 from . import drawing
-from .appstates import tRec
 
 boundary = "boundary"
 voronoi = "voronoi"
@@ -141,7 +140,6 @@ class EdgeLayer:
             viewer.layers.remove(self.edgeLayer)
 
     def draw(self, g: graph.Graph, config: drawing.PointEdgeConfig):
-        tRec().stamp("start drawing")
         ec = config.edgeConfig
         self.edgeLayer.shape_type = 'line'
         self.edgeLayer.data = g.get_edge_cord()
@@ -155,7 +153,6 @@ class EdgeLayer:
 
 
         self.edgeLayer.selected_data = set()
-        tRec().stamp("end drawing")
         # self.pointLayer.refresh()
 
     def create(name: str):

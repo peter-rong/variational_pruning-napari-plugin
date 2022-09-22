@@ -355,7 +355,8 @@ class AnglePruningAlgo(PruningAlgo):
 
     #gives output file for the dapcstp solver
     def prune(self, thresh:float):
-
+        print("There are : "+str(len(self.npGraph.nodes))+" nodes")
+        print("There are : " + str(len(self.npGraph.paths)) + " edges")
         clusters, junctions = self.__angle_thresh_cluster(thresh)
         graph, color, reward_list, cost_list, point_map, point_pair_map = self.generate_centroid_graph(clusters, junctions)
 
@@ -430,6 +431,7 @@ class AnglePruningAlgo(PruningAlgo):
                 negative_clusters.append(c)
 
         for j in junctions:
+
             point_list.append(j.point)
             point_color_list.append(blue) #junction points
             point_reward_list.append(0) #0 represents the junction point reward
@@ -579,7 +581,7 @@ class AnglePruningAlgo(PruningAlgo):
             queue = deque()
             curr_set = list()
             if path.isCore:
-                print('This should not ever print')
+                print('This path is a core and this should not ever print')
                 path_type = 'core'
             elif path.segval > 0:
                 path_type = 'pos'
