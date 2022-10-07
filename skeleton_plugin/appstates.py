@@ -176,6 +176,7 @@ class AnglePruneState(st.State):
         tRec().stamp("start of angle function and cluster")
         centroid_graph, centroid_points_color, reward_list, cost_list, point_map, point_pair_map =  prune_algo.prune(pruneT)
 
+        tRec().stamp("compute angle function and cluster")
         peConfig = ma.get_angular_config(get_size())
         centroid_peConfig = ma.get_angular_centroid_config(get_size())
 
@@ -188,7 +189,7 @@ class AnglePruneState(st.State):
         peConfig.pointConfig.face_color = point_colors
         peConfig.edgeConfig.edge_color = edge_colors
 
-        tRec().stamp("compute angle function and cluster")
+
         ds.Display.current().draw_layer(algo_st().graph, peConfig, ds.angle)
         tRec().stamp("draw cluster by angles")
 

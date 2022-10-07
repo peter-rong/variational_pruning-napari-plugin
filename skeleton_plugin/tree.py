@@ -107,6 +107,7 @@ class Tree:
         self.edges.append(edge)
 
     def to_graph(self):
+
         points = list()
         temp_nodes = list()
         edgeIndex = list()

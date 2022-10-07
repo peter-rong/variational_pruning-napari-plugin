@@ -101,10 +101,11 @@ class Graph:
             return ids
 
 
+#this also need more fix
 def cluster_to_skeleton(graph:Graph, point_map, point_pair_map) -> Graph:
+
     new_points = list()
     new_edges = list()
-
     for point in graph.points:
         point_tuple = tuple(point)
 
@@ -122,7 +123,6 @@ def cluster_to_skeleton(graph:Graph, point_map, point_pair_map) -> Graph:
 
                 new_edges.append([new_points.index(point_pair[0]), new_points.index(point_pair[1])])
 
-
     for edge_cord in graph.get_cord_as_tuples():
 
         for point_pair in point_pair_map[edge_cord]:
@@ -133,6 +133,7 @@ def cluster_to_skeleton(graph:Graph, point_map, point_pair_map) -> Graph:
                 new_points.append(point_pair[1])
 
             new_edges.append([new_points.index(point_pair[0]),new_points.index(point_pair[1])])
+
     #ma.SkeletonApp.inst().timer.stamp("before initialize graph")
     return Graph(new_points,new_edges)
 

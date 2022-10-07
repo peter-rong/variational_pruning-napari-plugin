@@ -9,6 +9,7 @@ from .graph import Graph, dist2D, prune_graph, getCentroid, rgb_to_hex
 from queue import PriorityQueue
 import sys
 from collections import deque
+import time
 from typing import Union
 import numpy as np
 import matplotlib.pyplot as plt
@@ -24,6 +25,7 @@ class Node:
         self.isCore = True
         self.paths = set()
         self.cost = 0
+        self.posClusterIndex = -1
     
     def et(self):
         return self.bt - self.radius
@@ -359,6 +361,7 @@ class AnglePruningAlgo(PruningAlgo):
         print("There are : " + str(len(self.npGraph.paths)) + " edges")
         clusters, junctions = self.__angle_thresh_cluster(thresh)
         graph, color, reward_list, cost_list, point_map, point_pair_map = self.generate_centroid_graph(clusters, junctions)
+        print("Centroid Graph Done")
 
         '''
         PCST = self.to_text_testing(graph, reward_list, cost_list)
@@ -385,6 +388,8 @@ class AnglePruningAlgo(PruningAlgo):
         edge_cost_list = list()
         point_map = {}
         point_pair_map = {}
+        #point_map_to_points = list()
+        #edge_map_to_points = list()
 
         black = (0,0,0)
         green = (0,255,0)
@@ -392,31 +397,41 @@ class AnglePruningAlgo(PruningAlgo):
 
         total_cost = 0
 
+        time1 = time.time()
+
         for c in clusters:
             if c[0].segval < 0:
                 for path in c:
                     total_cost += path.segval
 
-
         for c in clusters:
             point_dict_key = list()
             point_dict_value = list()
+            current_mapped_point = list()
 
             if c[0].segval == c[0].length * 10:
                 non_negative_clusters.append(c)
                 point_list.append(getCentroid(c))
+
+
                 point_dict_key = tuple(getCentroid(c))
+
                 point_color_list.append(black)
                 point_reward_list.append(abs(total_cost)+1)#abs(total_cost) +1 represents the core reward (becomes terminal)
 
                 for path in c:
+                    #current_mapped_point.append([path.one.point, path.other.point])
                     point_dict_value.append([path.one.point, path.other.point])
+
+                #point_map_to_points.append(current_mapped_point)
                 point_map[point_dict_key] = point_dict_value
 
             elif c[0].segval > 0:
                 non_negative_clusters.append(c)
                 point_list.append(getCentroid(c))
+
                 point_dict_key = tuple(getCentroid(c))
+
                 point_color_list.append(green)
                 reward = 0
                 for path in c:
@@ -424,7 +439,10 @@ class AnglePruningAlgo(PruningAlgo):
                 point_reward_list.append(reward) #reward equals sum of segval value
 
                 for path in c:
+                    #current_mapped_point.append([path.one.point, path.other.point])
                     point_dict_value.append([path.one.point, path.other.point])
+
+                #point_map_to_points.append(current_mapped_point)
                 point_map[point_dict_key] = point_dict_value
 
             else:
@@ -433,8 +451,19 @@ class AnglePruningAlgo(PruningAlgo):
         for j in junctions:
 
             point_list.append(j.point)
+            #point_map_to_points.append(list()) #empty mapped points
             point_color_list.append(blue) #junction points
             point_reward_list.append(0) #0 represents the junction point reward
+
+        time2 = time.time()
+        print(time2-time1)
+
+        for i in range (0,len(non_negative_clusters)):
+            pos_c = non_negative_clusters[i]
+            for path in pos_c:
+                path.one.posClusterIndex = i
+                path.other.posClusterIndex = i
+
 
         for neg_c in negative_clusters:
 
@@ -449,8 +478,17 @@ class AnglePruningAlgo(PruningAlgo):
             pair_dict_value = list()
 
             edge = []
+            '''
+            if point_one.posClusterIndex > -1:
+                clusterIndex = point_one.posClusterIndex
+                edge.append(clusterIndex)
+                pair_dict_key.append(tuple(getCentroid(non_negative_clusters[clusterIndex])))
 
-
+            if point_two.posClusterIndex > -1:
+                clusterIndex = point_two.posClusterIndex
+                edge.append(clusterIndex)
+                pair_dict_key.append(tuple(getCentroid(non_negative_clusters[clusterIndex])))
+            '''
             for cluster in non_negative_clusters:
                 if has_endpoint(cluster, point_one):
                     edge.append(point_list.index(getCentroid(cluster)))
@@ -481,8 +519,9 @@ class AnglePruningAlgo(PruningAlgo):
             edge_list.append(edge)
             edge_cost_list.append(cost)
 
+        time3 = time.time()
 
-
+        print(time3-time2)
         return Graph(point_list,edge_list),  [rgb_to_hex(c) for c in point_color_list],\
                point_reward_list, edge_cost_list, point_map, point_pair_map
 
@@ -507,6 +546,8 @@ class AnglePruningAlgo(PruningAlgo):
     def __angle_thresh_cluster(self, thresh:float):
 
         clusters = list()
+        for node in self.npGraph.nodes:
+            node.posClusterIndex = -1
 
         for path in self.npGraph.paths:
             path.isTaken = False
