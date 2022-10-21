@@ -68,8 +68,9 @@ class Algorithm:
 				temp.update_score()
 
 			root = self.get_solution_node()
+			self.get_solution_tree(root)
 			print('The score of the PCST is '+ str(root.score))
-			return self.get_solution_tree(root)
+			return self.tree
 
 
 	def get_solution_node(self):
@@ -83,6 +84,25 @@ class Algorithm:
 
 		return max_node
 
+	def get_solution_tree(self,root):
+
+		queue = deque()
+		queue.append(root)
+		root.solutionChecked = True
+
+		while len(queue) > 0:
+			curr = queue.popleft()
+			curr.inSol = True
+
+			for e in curr.edges:
+				neighbor = curr.get_other_node(e)
+				if not neighbor.solutionChecked:
+					if neighbor.score == root.score:
+						queue.append(neighbor)
+					neighbor.solutionChecked = True
+
+
+'''
 	def get_solution_tree(self,root):
 
 		queue = deque()
@@ -106,3 +126,4 @@ class Algorithm:
 					neighbor.solutionChecked = True
 
 		return solution_tree
+'''

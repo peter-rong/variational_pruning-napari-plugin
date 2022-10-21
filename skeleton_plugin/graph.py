@@ -68,6 +68,8 @@ class Graph:
         self.point_ids = self.__build_point_ids(point_ids)
         self.edge_ids = self.__build_edges_ids(edge_ids)
 
+        self.point_include = [True] * len(point_list)
+        self.edgeIndex_include = [True] * len(edge)
 
     def get_cord_as_tuples(self):
         edges = list()
@@ -100,8 +102,85 @@ class Graph:
         else:
             return ids
 
+def cluster_to_skeleton(graph:Graph, original_graph):
 
+    point_include = graph.point_include
+    edge_include = graph.edgeIndex_include
+
+    for path in original_graph.paths:
+        if path.clusterPointIndex == None and path.clusterEdgeIndex == None:
+            continue
+        elif path.clusterEdgeIndex == None:
+            point_index = path.clusterPointIndex
+            if point_include[point_index] == False:
+                path.inSol == False
+                path.one.inSol == False
+                path.other.inSol == False
+        elif path.clusterPointIndex == None:
+            edge_index = path.clusterEdgeIndex
+            if edge_include[edge_index] == False:
+                path.inSol == False
+                path.one.inSol == False
+                path.other.inSol == False
+
+    return original_graph
 #this also need more fix
+'''
+def cluster_to_skeleton(graph:Graph, original_graph) -> Graph:
+
+    old_points = graph.points
+    old_edge_index = graph.edgeIndex
+    old_edge_coord = list()
+
+    for index in old_edge_index:
+        old_edge_coord.append([ old_points[index[0]], old_points[index[1]]])
+
+    new_points = list()
+    new_edges = list()
+
+    for path in original_graph.paths:
+
+        if path.clusterEdge == None and path.clusterPoint == None:
+            continue
+
+        if path.clusterEdge == None:
+            if path.clusterPoint in old_points:
+
+                point_pair = [list(path.one.point), list(path.other.point)]
+
+                if point_pair[0] not in new_points:
+                    new_points.append(point_pair[0])
+                if point_pair[1] not in new_points:
+                    new_points.append(point_pair[1])
+
+                new_edges.append([new_points.index(point_pair[0]), new_points.index(point_pair[1])])
+
+        else:
+            if path.clusterEdge in old_edge_coord:
+
+                point_pair = [list(path.one.point), list(path.other.point)]
+
+                if point_pair[0] not in new_points:
+                    new_points.append(point_pair[0])
+                if point_pair[1] not in new_points:
+                    new_points.append(point_pair[1])
+
+                new_edges.append([new_points.index(point_pair[0]), new_points.index(point_pair[1])])
+
+            elif [path.clusterEdge[1],path.clusterEdge[0]] in old_edge_coord:
+
+                point_pair = [list(path.one.point), list(path.other.point)]
+
+                if point_pair[0] not in new_points:
+                    new_points.append(point_pair[0])
+                if point_pair[1] not in new_points:
+                    new_points.append(point_pair[1])
+
+                new_edges.append([new_points.index(point_pair[0]), new_points.index(point_pair[1])])
+
+    return Graph(new_points,new_edges)
+'''
+'''
 def cluster_to_skeleton(graph:Graph, point_map, point_pair_map) -> Graph:
 
     new_points = list()
@@ -136,6 +215,7 @@ def cluster_to_skeleton(graph:Graph, point_map, point_pair_map) -> Graph:
 
     #ma.SkeletonApp.inst().timer.stamp("before initialize graph")
     return Graph(new_points,new_edges)
+'''
 
 class VoronoiDiagram:
     

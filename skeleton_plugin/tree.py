@@ -11,6 +11,7 @@ class TreeNode:
         self.visitTwice = False
         self.solutionChecked = False
         self.score = r #temporary score
+        self.inSol = False
         self.edges = list()
 
     def add_edge(self, edge):
@@ -61,6 +62,10 @@ class TreeEdge:
         self.other = other
         self.cost = c
 
+    def edgeInSol(self):
+        if self.one.inSol and self.other.inSol:
+            return True
+        return False
     '''
     def get_other_node(self, node: TreeNode):
         if node == self.one:
@@ -106,15 +111,29 @@ class Tree:
         edge.other.add_edge(edge)
         self.edges.append(edge)
 
-    def to_graph(self):
+    def to_graph(self,graph: graph.Graph):
 
+        tree_nodes = self.nodes
+        tree_edges = self.edges
+
+        for i in range(len(tree_nodes)):
+            if tree_nodes[i].inSol == False:
+                graph.point_include[i] = False
+
+        for j in range(len(tree_edges)):
+            if tree_edges[j].edgeInSol() == False:
+                graph.edgeIndex_include[j] = False
+
+        return graph
+
+    '''
         points = list()
         temp_nodes = list()
         edgeIndex = list()
 
         for node in self.nodes:
             temp_nodes.append(node)
-            points.append(node.point)
+            points.append(list(node.point))
 
         for edge in self.edges:
             curr = []
@@ -123,3 +142,4 @@ class Tree:
             edgeIndex.append(curr)
 
         return graph.Graph(points, edgeIndex)
+    '''

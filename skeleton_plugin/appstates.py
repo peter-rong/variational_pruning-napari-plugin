@@ -174,7 +174,7 @@ class AnglePruneState(st.State):
 
         prune_algo = AnglePruningAlgo(algo_st().algo.graph, algo_st().algo.npGraph)
         tRec().stamp("start of angle function and cluster")
-        centroid_graph, centroid_points_color, reward_list, cost_list, point_map, point_pair_map =  prune_algo.prune(pruneT)
+        centroid_graph, centroid_points_color, reward_list, cost_list, original_graph = prune_algo.prune(pruneT)
 
         tRec().stamp("compute angle function and cluster")
         peConfig = ma.get_angular_config(get_size())
@@ -188,7 +188,6 @@ class AnglePruneState(st.State):
         peConfig.pointConfig.edge_color = point_colors
         peConfig.pointConfig.face_color = point_colors
         peConfig.edgeConfig.edge_color = edge_colors
-
 
         ds.Display.current().draw_layer(algo_st().graph, peConfig, ds.angle)
         tRec().stamp("draw cluster by angles")
@@ -204,11 +203,11 @@ class AnglePruneState(st.State):
         initial_tree = tree.Tree(centroid_graph.points, centroid_graph.edgeIndex, reward_list, cost_list)
         result_tree = treealgorithm.Algorithm(initial_tree).execute()
 
-        PCST_result_graph = result_tree.to_graph()
+        PCST_result_graph = result_tree.to_graph(centroid_graph)
         tRec().stamp("PCST_solver")
         PCST_result_peConfig = ma.get_PCST_result_config(get_size())
 
-        skeleton_result_graph = graph.cluster_to_skeleton(PCST_result_graph, point_map, point_pair_map)
+        skeleton_result_graph = graph.cluster_to_skeleton(PCST_result_graph, original_graph)
         tRec().stamp("PCST_to_Graph")
 
         ds.Display.current().draw_layer(PCST_result_graph, PCST_result_peConfig, ds.pcstResult)
@@ -216,7 +215,8 @@ class AnglePruneState(st.State):
 
         skeleton_result_peConfig = ma.get_skeleton_result_config(get_size())
 
-        ds.Display.current().draw_edge_layer(skeleton_result_graph, skeleton_result_peConfig, ds.skeletonResult)
+        #TODO
+        #ds.Display.current().draw_edge_layer(skeleton_result_graph, skeleton_result_peConfig, ds.skeletonResult)
         #ds.Display.current().draw_layer(skeleton_result_graph, skeleton_result_peConfig, ds.skeletonResult)
         tRec().stamp("draw_skeleton_result")
 
