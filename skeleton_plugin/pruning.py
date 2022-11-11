@@ -10,6 +10,7 @@ from queue import PriorityQueue
 import sys
 from collections import deque
 import time
+import math
 from typing import Union
 import numpy as np
 import matplotlib.pyplot as plt
@@ -198,7 +199,7 @@ class NodePathGraph:
     
     def set_angles(self, angles:list):
         for pi in range(len(self.paths)):
-            self.paths[pi].theta = angles[pi];
+            self.paths[pi].theta = angles[pi]
 
     def get_junction_color(self):
         return ['#0000FF' if node.is_explicit_junction() else None for node in self.nodes]
@@ -552,7 +553,7 @@ class AnglePruningAlgo(PruningAlgo):
                 core.add(p)
 
             else:
-                p.segval = p.theta - thresh
+                p.segval = math.sin(p.theta/2) - math.sin(thresh/2)
                 if p.segval >= 0:
                     pos.add(p)
                 else:
@@ -577,7 +578,7 @@ class AnglePruningAlgo(PruningAlgo):
             if p.isCore:
                 p.segval = 10*p.length #big enough
             else:
-                p.segval = (p.theta - thresh)*p.length
+                p.segval = (math.sin(p.theta) - math.sin(thresh))*p.length
 
         path_to_neglect = self.npGraph.get_negative_degree_one_path()
         while len(path_to_neglect) > 0:
