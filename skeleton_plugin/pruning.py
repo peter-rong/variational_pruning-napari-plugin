@@ -11,15 +11,16 @@ import sys
 from collections import deque
 import time
 import math
+from dynamicTree import DynamicTreeNode, DynamicTreeEdge, DynamicTree
 from typing import Union
 import numpy as np
 import matplotlib.pyplot as plt
 import networkx as nx
 
 
-class Node:   
-    
-    def __init__(self, p, r : float, ma : float):
+class Node:
+
+    def __init__(self, p, r: float, ma: float):
         self.point = p
         self.radius = r
         self.bt = ma
@@ -31,16 +32,16 @@ class Node:
 
     def et(self):
         return self.bt - self.radius
-    
+
     def get_one_path(self):
         for p in self.paths:
             return p
         return None
-    
+
     def add_path(self, path):
         if path not in self.paths:
-            self.paths.add(path)        
-    
+            self.paths.add(path)
+
     def remove_path(self, path):
         self.paths.remove(path)
 
@@ -56,7 +57,7 @@ class Node:
                 return False
         return True
 
-    def get_all_path_within_cluster(self, pathType)->list:
+    def get_all_path_within_cluster(self, pathType) -> list:
 
         l = []
 
@@ -82,7 +83,7 @@ class Node:
 
         if pathType == 'core':
             for path in self.paths:
-                if path.isTaken is False and path.segval == 10: #preset value
+                if path.isTaken is False and path.segval == 10:  # preset value
                     l.append(path)
 
         return l
@@ -117,8 +118,8 @@ class Node:
 
 
 class Path:
-    
-    def __init__(self, one:Node, other:Node, l:float):
+
+    def __init__(self, one: Node, other: Node, l: float):
         self.one = one
         self.other = other
         self.length = l
@@ -134,20 +135,34 @@ class Path:
         self.clusterEdgeIndex = None
         self.inSol = True
 
-class NodePathGraph:  
-    
+
+class NodePathGraph:
+
+    def to_dynamic_tree(self) -> DynamicTree:
+
+        dynamic_tree = DynamicTree([], [], [], [])
+
+        # start from a degree one node get its edge
+        # using a queue keep generating new edges and nodes.
+        '''
+        for node in self.nodes:
+            new_tree_node = DynamicTreeNode(node.point,0,0)
+            new_tree_node.isOldNode = True
+            DynamicTree.
+        '''
+
     def __init__(self, points, edges, radi, ma):
         self.max = ma
         self.nodes = list()
         self.paths = list()
 
         for pi in range(len(points)):
-            self.nodes.append(Node(p = points[pi], r = radi[pi], ma=ma))
-        
+            self.nodes.append(Node(p=points[pi], r=radi[pi], ma=ma))
+
         for e in edges:
             pid1 = e[0]
             pid2 = e[1]
-            l = dist2D(points[pid1],points[pid2])
+            l = dist2D(points[pid1], points[pid2])
             node1 = self.nodes[pid1]
             node2 = self.nodes[pid2]
             path = Path(node1, node2, l)
@@ -155,7 +170,7 @@ class NodePathGraph:
             node2.add_path(path)
             self.paths.append(path)
 
-    def get_negative_degree_one_path(self) ->list():
+    def get_negative_degree_one_path(self) -> list():
         ans = list()
 
         for node in self.nodes:
@@ -185,7 +200,7 @@ class NodePathGraph:
 
     def get_bts(self) -> list:
         return [n.bt for n in self.nodes]
-    
+
     def get_segval(self) -> list:
         return [p.segval for p in self.paths]
 
@@ -196,13 +211,14 @@ class NodePathGraph:
         for path in self.paths:
             path.one.add_path(path)
             path.other.add_path(path)
-    
-    def set_angles(self, angles:list):
+
+    def set_angles(self, angles: list):
         for pi in range(len(self.paths)):
             self.paths[pi].theta = angles[pi]
 
     def get_junction_color(self):
         return ['#0000FF' if node.is_explicit_junction() else None for node in self.nodes]
+
 
 class ClusterNode:
 
@@ -214,6 +230,7 @@ class ClusterNode:
         self.name = name
         self.paths = list()
 
+
 class ClusterPath:
 
     def __init__(self, one: Node, other: Node, c: float):
@@ -223,28 +240,28 @@ class ClusterPath:
 
 
 class PItem:
-    
-    def __init__(self, p : float, i):
+
+    def __init__(self, p: float, i):
         self.pri = p
         self.item = i
-    
+
     def __lt__(self, other):
         return self.pri < other.pri
-    
+
 
 class BurningAlgo:
-    
-    def __init__(self, g : Graph, radi : list, ma : float):
+
+    def __init__(self, g: Graph, radi: list, ma: float):
         self.graph = g
         self.npGraph = NodePathGraph(g.points, g.edgeIndex, radi, ma)
-    
+
     def burn(self):
         d_ones = self.npGraph.get_degree_ones()
         pq = PriorityQueue()
         for n in d_ones:
             n.bt = n.radius
-            pq.put(PItem(n.bt,n))
-        
+            pq.put(PItem(n.bt, n))
+
         while not pq.empty():
             targetN = pq.get().item
             path = targetN.get_one_path()
@@ -256,34 +273,34 @@ class BurningAlgo:
             if nextN.is_iso():
                 nextN.bt = targetN.bt + path.length
                 pq.put(PItem(nextN.bt, nextN))
-        
+
         self.npGraph.reset_paths()
-        
+
 
 class PruningAlgo:
-    
-    def __init__(self, g : Graph, npg : NodePathGraph):
+
+    def __init__(self, g: Graph, npg: NodePathGraph):
         self.graph = g
         self.npGraph = npg
-    
-    def prune(self, thresh:float)->Graph:
-        #virtual
+
+    def prune(self, thresh: float) -> Graph:
+        # virtual
         pass
 
 
 class ETPruningAlgo(PruningAlgo):
-    
-    def __init__(self, g : Graph, npg : NodePathGraph):
+
+    def __init__(self, g: Graph, npg: NodePathGraph):
         super().__init__(g, npg)
 
-    def prune(self, thresh : float) -> Graph:
-        #todo
+    def prune(self, thresh: float) -> Graph:
+        # todo
         removed = set()
         d_ones = self.npGraph.get_degree_ones()
         pq = PriorityQueue()
         for n in d_ones:
-            pq.put(PItem(n.et(),n))
-        
+            pq.put(PItem(n.et(), n))
+
         while not pq.empty():
             targetN = pq.get().item
             if targetN.et() >= thresh:
@@ -296,20 +313,22 @@ class ETPruningAlgo(PruningAlgo):
             nextN.remove_path(path)
             if nextN.is_iso():
                 pq.put(PItem(nextN.et(), nextN))
-        
+
         self.npGraph.reset_paths()
-        
+
         flags = [0 if node in removed else 1 for node in self.npGraph.nodes]
         return prune_graph(self.graph, flags)
 
-def has_endpoint(cluster:list, node:Node):
+
+def has_endpoint(cluster: list, node: Node):
     for path in cluster:
         if path.one == node or path.other == node:
             return True
 
     return False
 
-def cluster_endpoints(c:list)->list:
+
+def cluster_endpoints(c: list) -> list:
     points_list, connecting_points = list(), list()
     dict = {}
     for path in c:
@@ -328,41 +347,42 @@ def cluster_endpoints(c:list)->list:
 
     return connecting_points
 
+
 class AnglePruningAlgo(PruningAlgo):
-    
-    def __init__(self, g : Graph, npg : NodePathGraph):
+
+    def __init__(self, g: Graph, npg: NodePathGraph):
         super().__init__(g, npg)
 
-
-    def to_text_testing(self, graph, reward_list, cost_list:float):
+    def to_text_testing(self, graph, reward_list, cost_list: float):
 
         resulting_text = 'The resulting graph is:\nSECTION Graph\n'
         node_count, edge_count = len(graph.points), len(graph.edgeIndex)
-        resulting_text += 'Nodes '+ str(node_count) +'\nEdges '+ str(edge_count) +'\n'
+        resulting_text += 'Nodes ' + str(node_count) + '\nEdges ' + str(edge_count) + '\n'
 
         terminal_count = 0
         terminal_text = ''
 
-        #TODO
-        #need to fix sys.maxsize/2 and convert into the total cost
-        for i in range (len(graph.points)):
-            if reward_list[i] != sys.maxsize/2:
-                resulting_text += 'N '+ str((i+1)) +' '+ str(reward_list[i]) +'\n'
+        # TODO
+        # need to fix sys.maxsize/2 and convert into the total cost
+        for i in range(len(graph.points)):
+            if reward_list[i] != sys.maxsize / 2:
+                resulting_text += 'N ' + str((i + 1)) + ' ' + str(reward_list[i]) + '\n'
             else:
                 terminal_count += 1
-                terminal_text += 'TP ' + str((i+1)) +' '+ str(0) +'\n'
+                terminal_text += 'TP ' + str((i + 1)) + ' ' + str(0) + '\n'
 
-        for j in range (len(graph.edgeIndex)):
-            resulting_text += 'E ' + str((graph.edgeIndex[j][0]+1))+ ' ' + str((graph.edgeIndex[j][1]+1)) +' '+ str(abs(cost_list[j])) +'\n'
+        for j in range(len(graph.edgeIndex)):
+            resulting_text += 'E ' + str((graph.edgeIndex[j][0] + 1)) + ' ' + str(
+                (graph.edgeIndex[j][1] + 1)) + ' ' + str(abs(cost_list[j])) + '\n'
 
-        resulting_text += 'END'+'\n' +'\n'+ 'SECTION Terminals' +'\n'+'Terminals '+str(terminal_count)+'\n'
-        resulting_text += terminal_text + 'END' +'\n' +'\n'+ 'EOF'
+        resulting_text += 'END' + '\n' + '\n' + 'SECTION Terminals' + '\n' + 'Terminals ' + str(terminal_count) + '\n'
+        resulting_text += terminal_text + 'END' + '\n' + '\n' + 'EOF'
 
         return resulting_text
 
-    #gives output file for the dapcstp solver
-    def prune(self, thresh:float):
-        print("There are : "+str(len(self.npGraph.nodes))+" nodes")
+    # gives output file for the dapcstp solver
+    def prune(self, thresh: float):
+        print("There are : " + str(len(self.npGraph.nodes)) + " nodes")
         print("There are : " + str(len(self.npGraph.paths)) + " edges")
         clusters, junctions = self.__angle_thresh_cluster(thresh)
         graph, color, reward_list, cost_list, original_graph = self.generate_centroid_graph(clusters, junctions)
@@ -377,28 +397,28 @@ class AnglePruningAlgo(PruningAlgo):
         '''
         return graph, color, reward_list, cost_list, original_graph
 
-    def prune_heat(self, thresh:float)->list:
+    def prune_heat(self, thresh: float) -> list:
         self.__angle_thresh(thresh)
         pass
 
-    def generate_centroid_graph(self, clusters:list, junctions:list):
+    def generate_centroid_graph(self, clusters: list, junctions: list):
 
-        non_negative_clusters = [] #for connecting edges
-        negative_clusters = [] #represesnt edge
+        non_negative_clusters = []  # for connecting edges
+        negative_clusters = []  # represesnt edge
 
         point_list = list()
         edge_list = list()
         point_color_list = list()
         point_reward_list = list()
         edge_cost_list = list()
-        #point_map = {}
-        #point_pair_map = {}
-        #point_map_to_points = list()
-        #edge_map_to_points = list()
+        # point_map = {}
+        # point_pair_map = {}
+        # point_map_to_points = list()
+        # edge_map_to_points = list()
 
-        black = (0,0,0)
-        green = (0,255,0)
-        blue = (0,0,255)
+        black = (0, 0, 0)
+        green = (0, 255, 0)
+        blue = (0, 0, 255)
 
         total_cost = 0
 
@@ -410,8 +430,8 @@ class AnglePruningAlgo(PruningAlgo):
                     total_cost += path.segval
 
         for c in clusters:
-            #point_dict_key = list()
-            #point_dict_value = list()
+            # point_dict_key = list()
+            # point_dict_value = list()
             current_mapped_point = list()
 
             if c[0].segval == c[0].length * 10:
@@ -419,61 +439,61 @@ class AnglePruningAlgo(PruningAlgo):
                 curr_point = getCentroid(c)
                 point_list.append(getCentroid(c))
 
-                curr_index = len(point_list)-1
+                curr_index = len(point_list) - 1
                 for path in c:
                     path.clusterPointIndex = curr_index
 
-                #point_dict_key = tuple(getCentroid(c))
+                # point_dict_key = tuple(getCentroid(c))
 
                 point_color_list.append(black)
-                point_reward_list.append(abs(total_cost)+1)#abs(total_cost) +1 represents the core reward (becomes terminal)
+                point_reward_list.append(
+                    abs(total_cost) + 1)  # abs(total_cost) +1 represents the core reward (becomes terminal)
 
-                #for path in c:
-                    #current_mapped_point.append([path.one.point, path.other.point])
-                    #point_dict_value.append([path.one.point, path.other.point])
+                # for path in c:
+                # current_mapped_point.append([path.one.point, path.other.point])
+                # point_dict_value.append([path.one.point, path.other.point])
 
-                #point_map_to_points.append(current_mapped_point)
-                #point_map[point_dict_key] = point_dict_value
+                # point_map_to_points.append(current_mapped_point)
+                # point_map[point_dict_key] = point_dict_value
 
             elif c[0].segval > 0:
                 non_negative_clusters.append(c)
 
                 curr_point = getCentroid(c)
                 point_list.append(getCentroid(c))
-                curr_index = len(point_list)-1
+                curr_index = len(point_list) - 1
 
                 for path in c:
                     path.clusterPointIndex = curr_index
 
-                #point_dict_key = tuple(getCentroid(c))
+                # point_dict_key = tuple(getCentroid(c))
 
                 point_color_list.append(green)
                 reward = 0
                 for path in c:
                     reward += path.segval
-                point_reward_list.append(reward) #reward equals sum of segval value
+                point_reward_list.append(reward)  # reward equals sum of segval value
 
-                #for path in c:
-                    #current_mapped_point.append([path.one.point, path.other.point])
-                    #point_dict_value.append([path.one.point, path.other.point])
+                # for path in c:
+                # current_mapped_point.append([path.one.point, path.other.point])
+                # point_dict_value.append([path.one.point, path.other.point])
 
-                #point_map_to_points.append(current_mapped_point)
-                #point_map[point_dict_key] = point_dict_value
+                # point_map_to_points.append(current_mapped_point)
+                # point_map[point_dict_key] = point_dict_value
 
             else:
                 negative_clusters.append(c)
 
         for j in junctions:
-
             point_list.append(j.point)
-            #point_map_to_points.append(list()) #empty mapped points
-            point_color_list.append(blue) #junction points
-            point_reward_list.append(0) #0 represents the junction point reward
+            # point_map_to_points.append(list()) #empty mapped points
+            point_color_list.append(blue)  # junction points
+            point_reward_list.append(0)  # 0 represents the junction point reward
 
         time2 = time.time()
-        print(time2-time1)
+        print(time2 - time1)
 
-        for i in range (0,len(non_negative_clusters)):
+        for i in range(0, len(non_negative_clusters)):
             pos_c = non_negative_clusters[i]
             for path in pos_c:
                 path.one.posClusterIndex = i
@@ -488,20 +508,20 @@ class AnglePruningAlgo(PruningAlgo):
             endpoints = cluster_endpoints(neg_c)
             point_one, point_two = endpoints[0], endpoints[1]
 
-            #pair_dict_key = []
-            #pair_dict_value = list()
+            # pair_dict_key = []
+            # pair_dict_value = list()
 
             edge = []
 
             if point_one.posClusterIndex > -1:
                 clusterIndex = point_one.posClusterIndex
                 edge.append(clusterIndex)
-                #pair_dict_key.append(tuple(getCentroid(non_negative_clusters[clusterIndex])))
+                # pair_dict_key.append(tuple(getCentroid(non_negative_clusters[clusterIndex])))
 
             if point_two.posClusterIndex > -1:
                 clusterIndex = point_two.posClusterIndex
                 edge.append(clusterIndex)
-                #pair_dict_key.append(tuple(getCentroid(non_negative_clusters[clusterIndex])))
+                # pair_dict_key.append(tuple(getCentroid(non_negative_clusters[clusterIndex])))
             '''
             for cluster in non_negative_clusters:
                 if has_endpoint(cluster, point_one):
@@ -517,31 +537,31 @@ class AnglePruningAlgo(PruningAlgo):
             '''
             for j in junctions:
                 if j == point_one or j == point_two:
-                    for i in range (0,len(point_list)):
+                    for i in range(0, len(point_list)):
                         if j.point[0] == point_list[i][0] and j.point[1] == point_list[i][1]:
                             edge.append(i)
-                            #pair_dict_key.append(tuple(point_list[i]))
+                            # pair_dict_key.append(tuple(point_list[i]))
                             break
-            #print(edge)
+            # print(edge)
 
-            #pair_dict_key = tuple(pair_dict_key)
+            # pair_dict_key = tuple(pair_dict_key)
 
             for path in neg_c:
                 path.clusterEdgeIndex = len(edge_list)
-                #pair_dict_value.append([path.one.point, path.other.point])
+                # pair_dict_value.append([path.one.point, path.other.point])
 
-            #point_pair_map[pair_dict_key] = pair_dict_value
+            # point_pair_map[pair_dict_key] = pair_dict_value
 
             edge_list.append(edge)
             edge_cost_list.append(cost)
 
         time3 = time.time()
 
-        print(time3-time2)
-        return Graph(point_list,edge_list),  [rgb_to_hex(c) for c in point_color_list],\
+        print(time3 - time2)
+        return Graph(point_list, edge_list), [rgb_to_hex(c) for c in point_color_list], \
                point_reward_list, edge_cost_list, self.npGraph
 
-    def __angle_thresh(self, thresh:float):
+    def __angle_thresh(self, thresh: float):
         pos = set()
         neg = set()
         core = set()
@@ -553,15 +573,15 @@ class AnglePruningAlgo(PruningAlgo):
                 core.add(p)
 
             else:
-                p.segval = math.sin(p.theta/2) - math.sin(thresh/2)
+                p.segval = math.sin(p.theta / 2) - math.sin(thresh / 2)
                 if p.segval >= 0:
                     pos.add(p)
                 else:
                     p.segval = 0
                     neg.add(p)
-        return (pos,neg,core)
+        return (pos, neg, core)
 
-    def __angle_thresh_cluster(self, thresh:float):
+    def __angle_thresh_cluster(self, thresh: float):
 
         clusters = list()
         for node in self.npGraph.nodes:
@@ -576,9 +596,9 @@ class AnglePruningAlgo(PruningAlgo):
 
         for p in self.npGraph.paths:
             if p.isCore:
-                p.segval = 10*p.length #big enough
+                p.segval = 10 * p.length  # big enough
             else:
-                p.segval = (math.sin(p.theta) - math.sin(thresh))*p.length
+                p.segval = (math.sin(p.theta) - math.sin(thresh)) * p.length
 
         path_to_neglect = self.npGraph.get_negative_degree_one_path()
         while len(path_to_neglect) > 0:
@@ -592,7 +612,7 @@ class AnglePruningAlgo(PruningAlgo):
         '''
         cluster_count = 0
 
-        #get all the ones next to core
+        # get all the ones next to core
         for path in self.npGraph.paths:
             if not path.isCore:
                 continue
@@ -674,10 +694,10 @@ class AnglePruningAlgo(PruningAlgo):
 
             color_total_value = 0
             for path in curr_set:
-                color_total_value += path.segval/path.length
+                color_total_value += path.segval / path.length
 
             for path in curr_set:
-                path.colorvalue = color_total_value/len(curr_set)
+                path.colorvalue = color_total_value / len(curr_set)
 
             clusters.append(curr_set)
 
@@ -685,7 +705,7 @@ class AnglePruningAlgo(PruningAlgo):
         for path in self.npGraph.paths:
             path.isTaken = False
 
-        print('There are '+str(len(clusters))+' clusters')
+        print('There are ' + str(len(clusters)) + ' clusters')
 
         junctions = list()
 
@@ -695,10 +715,10 @@ class AnglePruningAlgo(PruningAlgo):
 
         print('There are ' + str(len(junctions)) + ' junctions')
 
-        return clusters,junctions
+        return clusters, junctions
 
-    #return pos_cluster, neg_cluster, core_cluster
-    #not used at this point
+    # return pos_cluster, neg_cluster, core_cluster
+    # not used at this point
     def generate_graph(self, clusters, junctions):
 
         cluster_nodes = list()
@@ -706,25 +726,25 @@ class AnglePruningAlgo(PruningAlgo):
         junction_counter = 0
         pos_counter = 0
 
-        #junction node
+        # junction node
         for j in junctions:
             junction_counter += 1
             points_list, outerpoints_list = list(j.point), list(j.point)
-            point_name = 'junction '+ str(junction_counter)
-            cluster_node = ClusterNode(points_list, 0, False, outerpoints_list,point_name)
+            point_name = 'junction ' + str(junction_counter)
+            cluster_node = ClusterNode(points_list, 0, False, outerpoints_list, point_name)
             cluster_nodes.append(cluster_node)
 
         for c in clusters:
             # positive or core node
-            if c[0].colorvalue/c[0].length > 0:
+            if c[0].colorvalue / c[0].length > 0:
                 is_core = False
                 point_name = ''
-                if c[0].colorvalue/c[0].length == 10:
+                if c[0].colorvalue / c[0].length == 10:
                     is_core = True
                     point_name = 'core'
                 else:
                     pos_counter += 1
-                    point_name = 'pos '+str(pos_counter)
+                    point_name = 'pos ' + str(pos_counter)
 
                 points_list, outerpoints_list = list(), list()
                 dict = {}
@@ -736,20 +756,20 @@ class AnglePruningAlgo(PruningAlgo):
                     if path.one not in dict:
                         dict[path.one] = 1
                     else:
-                        dict[path.one] = dict[path.one]+1
+                        dict[path.one] = dict[path.one] + 1
                     if path.other not in dict:
                         dict[path.other] = 1
                     else:
-                        dict[path.other] = dict[path.other]+1
+                        dict[path.other] = dict[path.other] + 1
 
                 for key in dict.keys():
                     if dict[key] == 1:
                         outerpoints_list.append(key)
 
-                cluster_node = ClusterNode(points_list, len(c)*c[0].colorvalue, is_core, outerpoints_list, point_name)
+                cluster_node = ClusterNode(points_list, len(c) * c[0].colorvalue, is_core, outerpoints_list, point_name)
                 cluster_nodes.append(cluster_node)
 
-            #negative as path
+            # negative as path
             else:
                 outerpoints_list = []
                 dict = {}
@@ -757,21 +777,21 @@ class AnglePruningAlgo(PruningAlgo):
                     if path.one not in dict:
                         dict[path.one] = 1
                     else:
-                        dict[path.one] = dict[path.one]+1
+                        dict[path.one] = dict[path.one] + 1
                     if path.other not in dict:
                         dict[path.other] = 1
                     else:
-                        dict[path.other] = dict[path.other]+1
+                        dict[path.other] = dict[path.other] + 1
                 for key in dict.keys():
                     if dict[key] == 1:
                         outerpoints_list.append(key)
 
-                cluster_path = ClusterPath(outerpoints_list[0],outerpoints_list[1],len(c)*c[0].colorvalue)
-                outerpoints_list[0].paths.append(cluster_path) #set path
-                outerpoints_list[1].paths.append(cluster_path) #set path
+                cluster_path = ClusterPath(outerpoints_list[0], outerpoints_list[1], len(c) * c[0].colorvalue)
+                outerpoints_list[0].paths.append(cluster_path)  # set path
+                outerpoints_list[1].paths.append(cluster_path)  # set path
                 cluster_paths.append(cluster_path)
 
-        #graph with networkx
+        # graph with networkx
 
 
 '''
