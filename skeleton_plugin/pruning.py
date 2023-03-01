@@ -5,7 +5,7 @@ Created on Mon Feb 21 13:28:18 2022
 @author: Yigan
 """
 
-from .graph import Graph, dist2D, prune_graph, getCentroid, rgb_to_hex
+from .graph import Graph, dist2D,midPoint, prune_graph, getCentroid, rgb_to_hex
 from queue import PriorityQueue
 import sys
 from collections import deque
@@ -29,6 +29,7 @@ class Node:
         self.cost = 0
         self.posClusterIndex = -1
         self.inSol = True
+        self.reward = 0
 
     def et(self):
         return self.bt - self.radius
@@ -140,7 +141,47 @@ class NodePathGraph:
 
     def to_dynamic_tree(self) -> DynamicTree:
 
-        dynamic_tree = DynamicTree([], [], [], [])
+        total_reward = 0
+
+        hasCore = False
+        for path in self.paths:
+            total_reward += (math.sin(path.theta)*path.length)
+            path.one.isCore = True
+            path.other.isCore = True
+            hasCore = True
+
+        dynamicTree = DynamicTree([], [], [], [])
+
+        node_map = {}
+
+        for node in self.nodes:
+            if not node.isCore:
+                node_reward = 0
+                node_cost = 0
+                for path in node.paths:
+                    node_reward += (math.sin(path.theta)*path.length /2)
+                    node_cost += path.length/2
+
+                new_node = DynamicTreeNode(node.point,node_reward,node_cost)
+                dynamicTree.add_node(new_node)
+                node_map[node] = new_node
+
+        if hasCore:
+            core_node = DynamicTreeNode(node.point, math.inf, 0)
+            dynamicTree.add_node(core_node)
+
+        for path in self.paths:
+            if not path.one.isCore and not path.other.isCore:
+                new_edge = DynamicTreeEdge(node_map[path.one], node_map[path.other])
+                dynamicTree.add_edge(new_edge)
+            elif path.one.isCore:
+                new_edge = DynamicTreeEdge(node_map[path.other],core_node)
+                dynamicTree.add_edge(new_edge)
+            elif path.other.isCore:
+                new_edge = DynamicTreeEdge(node_map[path.one], core_node)
+                dynamicTree.add_edge(new_edge)
+
+        return dynamicTree
 
         # start from a degree one node get its edge
         # using a queue keep generating new edges and nodes.
@@ -380,6 +421,10 @@ class AnglePruningAlgo(PruningAlgo):
 
         return resulting_text
 
+    def generate_dynamic_tree(self):
+        dynamic_tree = self.npGraph.to_dynamic_tree()
+
+
     # gives output file for the dapcstp solver
     def prune(self, thresh: float):
         print("There are : " + str(len(self.npGraph.nodes)) + " nodes")
@@ -411,10 +456,6 @@ class AnglePruningAlgo(PruningAlgo):
         point_color_list = list()
         point_reward_list = list()
         edge_cost_list = list()
-        # point_map = {}
-        # point_pair_map = {}
-        # point_map_to_points = list()
-        # edge_map_to_points = list()
 
         black = (0, 0, 0)
         green = (0, 255, 0)
@@ -449,13 +490,6 @@ class AnglePruningAlgo(PruningAlgo):
                 point_reward_list.append(
                     abs(total_cost) + 1)  # abs(total_cost) +1 represents the core reward (becomes terminal)
 
-                # for path in c:
-                # current_mapped_point.append([path.one.point, path.other.point])
-                # point_dict_value.append([path.one.point, path.other.point])
-
-                # point_map_to_points.append(current_mapped_point)
-                # point_map[point_dict_key] = point_dict_value
-
             elif c[0].segval > 0:
                 non_negative_clusters.append(c)
 
@@ -474,12 +508,6 @@ class AnglePruningAlgo(PruningAlgo):
                     reward += path.segval
                 point_reward_list.append(reward)  # reward equals sum of segval value
 
-                # for path in c:
-                # current_mapped_point.append([path.one.point, path.other.point])
-                # point_dict_value.append([path.one.point, path.other.point])
-
-                # point_map_to_points.append(current_mapped_point)
-                # point_map[point_dict_key] = point_dict_value
 
             else:
                 negative_clusters.append(c)
@@ -522,19 +550,7 @@ class AnglePruningAlgo(PruningAlgo):
                 clusterIndex = point_two.posClusterIndex
                 edge.append(clusterIndex)
                 # pair_dict_key.append(tuple(getCentroid(non_negative_clusters[clusterIndex])))
-            '''
-            for cluster in non_negative_clusters:
-                if has_endpoint(cluster, point_one):
-                    edge.append(point_list.index(getCentroid(cluster)))
-                    pair_dict_key.append(tuple(getCentroid(cluster)))
-                    break
 
-            for cluster in non_negative_clusters:
-                if has_endpoint(cluster, point_two):
-                    edge.append(point_list.index(getCentroid(cluster)))
-                    pair_dict_key.append(tuple(getCentroid(cluster)))
-                    break
-            '''
             for j in junctions:
                 if j == point_one or j == point_two:
                     for i in range(0, len(point_list)):
@@ -794,14 +810,3 @@ class AnglePruningAlgo(PruningAlgo):
         # graph with networkx
 
 
-'''
-points = [[0,1],[1,2],[2,3],[3,4]]
-edges = [[0,1],[1,2],[2,3]]
-#flags = [0,1,1,0]
-radi = [1,2,2,1]
-
-g = Graph(points, edges, None)
-algo = ETPruningAlgo(g, radi)
-algo.burn()
-print(algo.npGraph.get_bts())
-'''
