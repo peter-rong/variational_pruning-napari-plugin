@@ -1,4 +1,4 @@
-import dynamicTree
+from . import dynamicTree
 import math
 import copy
 from collections import deque
@@ -118,7 +118,6 @@ class Algorithm:
         iter_counter = 1
         while len(new_tree.edges) > 1:
             iter_counter += 1
-            print(len(new_tree.edges))
             min_alpha = math.inf
             min_edge = None
 
@@ -133,6 +132,9 @@ class Algorithm:
                     min_alpha = edge.other_to_one_score / edge.other_to_one_cost
                     min_edge = edge
 
+            if min_edge is None:
+                print("break")
+                break
             self.alpha_list.append(min_alpha+self.alpha_list[-1])
             new_tree = self.shrink_tree(new_tree, min_alpha, min_edge)
             self.tree_list.append(copy.deepcopy(new_tree))

@@ -117,6 +117,11 @@ class DynamicTree:
         edge.other.add_edge(edge)
         self.edges.append(edge)
 
+    def describe(self):
+        print("There are " +str(len(self.nodes))+ " nodes")
+        print("There are " + str(len(self.edges)) + " edges")
+
+
     def __str__(self):
 
         string = ""

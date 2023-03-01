@@ -11,8 +11,8 @@ import sys
 from collections import deque
 import time
 import math
-from dynamicTree import DynamicTreeNode, DynamicTreeEdge, DynamicTree
-from dynamicTreeAlgorithm import Algorithm
+from .dynamicTree import DynamicTreeNode, DynamicTreeEdge, DynamicTree
+from .dynamicTreeAlgorithm import Algorithm
 from typing import Union
 import numpy as np
 import matplotlib.pyplot as plt
@@ -144,18 +144,23 @@ class NodePathGraph:
 
         total_reward = 0
 
+        for node in self.nodes:
+            node.isCore = False
+
         hasCore = False
         for path in self.paths:
             total_reward += (math.sin(path.theta)*path.length)
-            path.one.isCore = True
-            path.other.isCore = True
-            hasCore = True
+            if path.isCore:
+                path.one.isCore = True
+                path.other.isCore = True
+                hasCore = True
 
         dynamicTree = DynamicTree([], [], [], [])
 
         node_map = {}
 
         for node in self.nodes:
+
             if not node.isCore:
                 node_reward = 0
                 node_cost = 0
@@ -175,23 +180,15 @@ class NodePathGraph:
             if not path.one.isCore and not path.other.isCore:
                 new_edge = DynamicTreeEdge(node_map[path.one], node_map[path.other])
                 dynamicTree.add_edge(new_edge)
-            elif path.one.isCore:
+            elif path.one.isCore and not path.other.isCore:
                 new_edge = DynamicTreeEdge(node_map[path.other],core_node)
                 dynamicTree.add_edge(new_edge)
-            elif path.other.isCore:
+            elif path.other.isCore and not path.one.isCore:
                 new_edge = DynamicTreeEdge(node_map[path.one], core_node)
                 dynamicTree.add_edge(new_edge)
 
         return dynamicTree
 
-        # start from a degree one node get its edge
-        # using a queue keep generating new edges and nodes.
-        '''
-        for node in self.nodes:
-            new_tree_node = DynamicTreeNode(node.point,0,0)
-            new_tree_node.isOldNode = True
-            DynamicTree.
-        '''
 
     def __init__(self, points, edges, radi, ma):
         self.max = ma
@@ -424,12 +421,11 @@ class AnglePruningAlgo(PruningAlgo):
 
     def generate_dynamic_tree(self):
         dynamic_tree = self.npGraph.to_dynamic_tree()
-        dynamic_algorithm = Algorithm(dynamic_tree)
-        Algorithm.execute()
-
+        Algorithm(dynamic_tree).execute(dynamic_tree)
 
     # gives output file for the dapcstp solver
     def prune(self, thresh: float):
+        self.generate_dynamic_tree()
         print("There are : " + str(len(self.npGraph.nodes)) + " nodes")
         print("There are : " + str(len(self.npGraph.paths)) + " edges")
         clusters, junctions = self.__angle_thresh_cluster(thresh)
