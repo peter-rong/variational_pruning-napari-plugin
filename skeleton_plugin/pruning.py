@@ -12,6 +12,7 @@ from collections import deque
 import time
 import math
 from dynamicTree import DynamicTreeNode, DynamicTreeEdge, DynamicTree
+from dynamicTreeAlgorithm import Algorithm
 from typing import Union
 import numpy as np
 import matplotlib.pyplot as plt
@@ -423,6 +424,8 @@ class AnglePruningAlgo(PruningAlgo):
 
     def generate_dynamic_tree(self):
         dynamic_tree = self.npGraph.to_dynamic_tree()
+        dynamic_algorithm = Algorithm(dynamic_tree)
+        Algorithm.execute()
 
 
     # gives output file for the dapcstp solver
