@@ -143,6 +143,7 @@ class NodePathGraph:
     def to_dynamic_tree(self) -> DynamicTree:
 
         total_reward = 0
+        min_cost = math.inf
 
         for node in self.nodes:
             node.isCore = False
@@ -150,6 +151,7 @@ class NodePathGraph:
         hasCore = False
         for path in self.paths:
             total_reward += (math.sin(path.theta)*path.length)
+            min_cost = min(min_cost,path.length/2)
             if path.isCore:
                 path.one.isCore = True
                 path.other.isCore = True
@@ -173,7 +175,7 @@ class NodePathGraph:
                 node_map[node] = new_node
 
         if hasCore:
-            core_node = DynamicTreeNode(node.point, math.inf, 0)
+            core_node = DynamicTreeNode(node.point, total_reward, min_cost)
             dynamicTree.add_node(core_node)
 
         for path in self.paths:
