@@ -148,6 +148,10 @@ class NodePathGraph:
         for node in self.nodes:
             node.isCore = False
 
+        core_node_count = 0
+        core_node_x = 0
+        core_node_y = 0
+
         hasCore = False
         for path in self.paths:
             total_reward += (math.sin(path.theta)*path.length)
@@ -155,7 +159,6 @@ class NodePathGraph:
             if path.isCore:
                 path.one.isCore = True
                 path.other.isCore = True
-                hasCore = True
 
         dynamicTree = DynamicTree([], [], [], [])
 
@@ -173,9 +176,13 @@ class NodePathGraph:
                 new_node = DynamicTreeNode(node.point,node_reward,node_cost)
                 dynamicTree.add_node(new_node)
                 node_map[node] = new_node
+            else:
+                core_node_count += 1
+                core_node_x += node.point[0]
+                core_node_y += node.point[1]
 
-        if hasCore:
-            core_node = DynamicTreeNode(node.point, total_reward, min_cost)
+        if core_node_count > 0:
+            core_node = DynamicTreeNode([core_node_x/core_node_count, core_node_y/core_node_count], total_reward, min_cost)
             dynamicTree.add_node(core_node)
 
         for path in self.paths:
@@ -423,11 +430,24 @@ class AnglePruningAlgo(PruningAlgo):
 
     def generate_dynamic_tree(self):
         dynamic_tree = self.npGraph.to_dynamic_tree()
-        Algorithm(dynamic_tree).execute(dynamic_tree)
+        alpha_list, tree_list = Algorithm(dynamic_tree).execute(dynamic_tree)
+
+        return alpha_list, tree_list
+
+    def dynamic_prune(self, thresh: float):
+        alpha_list, tree_list = self.generate_dynamic_tree()
+
+        result_tree = tree_list[-1]
+        for i in range(1,len(alpha_list)):
+            if alpha_list[i] > thresh:
+                result_tree = tree_list[i-1]
+                break
+
+        return result_tree, tree_list
 
     # gives output file for the dapcstp solver
     def prune(self, thresh: float):
-        self.generate_dynamic_tree()
+        alpha_list, tree_list = self.generate_dynamic_tree()
         print("There are : " + str(len(self.npGraph.nodes)) + " nodes")
         print("There are : " + str(len(self.npGraph.paths)) + " edges")
         clusters, junctions = self.__angle_thresh_cluster(thresh)

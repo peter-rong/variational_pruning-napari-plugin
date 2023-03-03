@@ -103,11 +103,11 @@ class Algorithm:
                 edge.other_to_one_cost = total_cost - edge.one_to_other_cost
 
             # find minimum alpha and the edge
-            if min_alpha > edge.one_to_other_score / edge.one_to_other_cost:
+            if edge.one_to_other_cost != 0 and min_alpha > edge.one_to_other_score / edge.one_to_other_cost:
                 min_alpha = edge.one_to_other_score / edge.one_to_other_cost
                 min_edge = edge
 
-            if min_alpha > edge.other_to_one_score / edge.other_to_one_cost:
+            if edge.other_to_one_cost != 0 and min_alpha > edge.other_to_one_score / edge.other_to_one_cost:
                 min_alpha = edge.other_to_one_score / edge.other_to_one_cost
                 min_edge = edge
 

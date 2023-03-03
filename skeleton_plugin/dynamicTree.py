@@ -1,4 +1,6 @@
 import sys
+from . import graph
+
 
 class DynamicTreeNode:
 
@@ -97,6 +99,25 @@ class DynamicTree:
             self.nodes[secondIndex].add_edge(edge)
             self.edges.append(edge)
 
+    def to_graph(self) -> graph.Graph:
+
+        tree_graph = graph.Graph([], [])
+
+        for node in self.nodes:
+            tree_graph.points.append(node.point)
+
+        for edge in self.edges:
+
+            node1 = edge.one
+            node2 = edge.other
+
+            index1 = self.nodes.index(node1)
+            index2 = self.nodes.index(node2)
+
+            tree_graph.edgeIndex.append([index1, index2])
+
+        return tree_graph
+
     def get_leaves(self):
         leaves_list = list()
         for node in self.nodes:
@@ -118,9 +139,8 @@ class DynamicTree:
         self.edges.append(edge)
 
     def describe(self):
-        print("There are " +str(len(self.nodes))+ " nodes")
+        print("There are " + str(len(self.nodes)) + " nodes")
         print("There are " + str(len(self.edges)) + " edges")
-
 
     def __str__(self):
 

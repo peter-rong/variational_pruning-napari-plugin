@@ -255,6 +255,19 @@ def get_skeleton_result_config(size : float) -> drawing.PointEdgeConfig:
 
     return drawing.PointEdgeConfig(pConfig, eConfig)
 
+def get_dynamic_result_config(size : float) -> drawing.PointEdgeConfig:
+    pConfig = drawing.angular_default_config()
+    eConfig = drawing.angular_default_config()
+
+    pConfig.size = size
+    pConfig.edge_color = 'red'
+    pConfig.face_color = 'red'
+
+    eConfig.size = size / 2
+    eConfig.edge_color = 'red'
+    eConfig.face_color = 'red'
+
+    return drawing.PointEdgeConfig(pConfig, eConfig)
 
 def get_angular_config(size : float) -> drawing.PointEdgeConfig:
     pConfig = drawing.angular_default_config()
@@ -286,7 +299,6 @@ def draw_graph(viewer : napari.Viewer, g : graph.Graph, config : drawing.PointEd
     #viewer.add_shapes(g.get_edge_cord(), name = ec.name, scale = ec.size, opacity = ec.opacity, face_color = ec.face_color, edge_color = ec.edge_color, shape_type = "line")
     shapeLayer = napari.layers.Shapes(name = ec.name)
     shapeLayer.add_lines(g.get_edge_cord(), edge_width = ec.size, face_color = ec.face_color, edge_color = ec.edge_color)
-    
     
     circs = list()
     for p in g.points:

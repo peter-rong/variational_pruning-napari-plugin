@@ -30,7 +30,7 @@ def get_size() -> float:
 
 
 class ReadState(st.State):
-    
+
     def execute(self):
         algo_st().raw_data = self.__read_data()
         app_st().shape = algo_st().raw_data.shape
@@ -128,7 +128,8 @@ class PruneChoosingState(st.State):
 
 
 class AngleState(st.State):
-    
+
+
     def execute(self): 
         
         if algo_st().algo is None:
@@ -171,10 +172,22 @@ class AnglePruneState(st.State):
             return
 
         pruneT = np.pi * app_st().etThresh / 100.0
+        raw_threshold = app_st().etThresh / 100.0
+
+        print("threshold is "+ str(raw_threshold))
 
         prune_algo = AnglePruningAlgo(algo_st().algo.graph, algo_st().algo.npGraph)
         tRec().stamp("start of angle function and cluster")
         centroid_graph, centroid_points_color, reward_list, cost_list, original_graph = prune_algo.prune(pruneT)
+
+        dynamic_tree, dynamic_tree_list = prune_algo.dynamic_prune(raw_threshold)
+        dynamic_graph = dynamic_tree.to_graph()
+        #TODO complete dynamic_tree.to_graph()
+
+        dynamicConfig = ma.get_dynamic_result_config(get_size())
+
+        ds.Display.current().draw_layer(dynamic_graph, dynamicConfig, ds.angle)
+        tRec().stamp("draw dynamic graph")
 
         tRec().stamp("compute angle function and cluster")
         peConfig = ma.get_angular_config(get_size())
@@ -189,8 +202,8 @@ class AnglePruneState(st.State):
         peConfig.pointConfig.face_color = point_colors
         peConfig.edgeConfig.edge_color = edge_colors
 
-        ds.Display.current().draw_layer(algo_st().graph, peConfig, ds.angle)
-        tRec().stamp("draw cluster by angles")
+        #ds.Display.current().draw_layer(algo_st().graph, peConfig, ds.angle)
+        #tRec().stamp("draw cluster by angles")
 
         centroid_peConfig.pointConfig.edge_color = centroid_points_color
         centroid_peConfig.pointConfig.face_color = centroid_points_color
