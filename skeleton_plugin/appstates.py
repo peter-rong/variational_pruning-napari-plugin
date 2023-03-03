@@ -182,7 +182,7 @@ class AnglePruneState(st.State):
 
         dynamic_tree, dynamic_tree_list = prune_algo.dynamic_prune(raw_threshold)
         dynamic_graph = dynamic_tree.to_graph()
-        #TODO complete dynamic_tree.to_graph()
+        #TODO make a graph with color list for dynamic_tree_list
 
         dynamicConfig = ma.get_dynamic_result_config(get_size())
 
