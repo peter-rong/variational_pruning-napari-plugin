@@ -635,7 +635,7 @@ class AnglePruningAlgo(PruningAlgo):
             if p.isCore:
                 p.segval = 10 * p.length  # big enough
             else:
-                p.segval = (math.sin(p.theta) - math.sin(thresh)) * p.length
+                p.segval = (math.sin(p.theta/2) - math.sin(thresh/2)) * p.length
 
         path_to_neglect = self.npGraph.get_negative_degree_one_path()
         while len(path_to_neglect) > 0:

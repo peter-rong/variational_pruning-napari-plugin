@@ -99,6 +99,23 @@ class DynamicTree:
             self.nodes[secondIndex].add_edge(edge)
             self.edges.append(edge)
 
+    def to_colored_graph(self, tree_list: list):
+
+        tree = tree_list[0]
+        color_list = [0] * len(tree.edges)
+        index = len(tree_list)
+
+        for i in range(len(tree.edges)):
+            color = 1.0
+            for j in range(len(tree_list)):
+                if not tree_list[j].hasEdge(tree.edges[i]):
+                    color = float(j) / len(tree_list)
+                    break
+            color_list[i] = color
+
+        graph = tree.to_graph()
+        return graph, color_list
+
     def to_graph(self) -> graph.Graph:
 
         tree_graph = graph.Graph([], [])
@@ -107,7 +124,6 @@ class DynamicTree:
             tree_graph.points.append(node.point)
 
         for edge in self.edges:
-
             node1 = edge.one
             node2 = edge.other
 
@@ -141,6 +157,17 @@ class DynamicTree:
     def describe(self):
         print("There are " + str(len(self.nodes)) + " nodes")
         print("There are " + str(len(self.edges)) + " edges")
+
+    def hasEdge(self, edge: DynamicTreeEdge):
+        point1 = edge.one.point
+        point2 = edge.other.point
+        for e in self.edges:
+            if (e.one.point[0] == point1[0] and e.other.point[0] == point2[0]
+                and e.one.point[1] == point1[1] and e.other.point[1] == point2[1])\
+                    or (e.one.point[0] == point2[0] and e.other.point[0] == point2[0]
+                        and e.one.point[1] == point2[1] and e.other.point[1] == point2[1]):
+                return True
+        return False
 
     def __str__(self):
 

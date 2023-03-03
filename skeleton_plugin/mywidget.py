@@ -140,7 +140,9 @@ class DebugWidget(QWidget):
         self.show_PCST_box = self.__make_box("show PCST", 320)
         self.show_PCST_result_box = self.__make_box("show PCST result", 360)
         self.show_skeleton_result_box = self.__make_box("show skeleton result", 400)
-        
+        self.show_dynamic_box = self.__make_box("show dynamic", 440)
+        self.show_full_dynamic_box = self.__make_box("show full dynamic", 480)
+
         WidgetManager.inst().add(self)
     
     def sync(self):
@@ -156,6 +158,9 @@ class DebugWidget(QWidget):
         config.show_pcst = self.show_PCST_box.isChecked()
         config.show_pcst_result = self.show_PCST_result_box.isChecked()
         config.show_skeleton_result = self.show_skeleton_result_box.isChecked()
+        config.show_dynamic = self.show_dynamic_box.isChecked()
+        config.show_full_dynamic = self.show_full_dynamic_box.isChecked()
+
         Display.current().set_config(config)
     
     def __make_box(self, text, position):

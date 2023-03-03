@@ -17,6 +17,8 @@ burnTime = "burn time"
 erosionT = "ET"
 final = "final"
 angle = "angle"
+dynamic = "dynamic"
+full_dynamic = "full dynamic"
 pcst = "pcst" #pr
 pcstResult = "pcst result"
 skeletonResult = "skeleton result"
@@ -33,6 +35,8 @@ class DisplayConfig:
         self.show_et = False
         self.show_final = True
         self.show_angle = False
+        self.show_dynamic = False
+        self.show_full_dynamic = False
         self.show_pcst = False
         self.show_pcst_result = False
         self.show_skeleton_result = False
@@ -54,6 +58,10 @@ class DisplayConfig:
             return self.show_final
         if name == angle:
             return self.show_angle
+        if name == dynamic:
+            return self.show_dynamic
+        if name == full_dynamic:
+            return self.show_full_dynamic
         if name == pcst:
             return self.show_pcst
         if name == pcstResult:

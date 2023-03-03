@@ -4,6 +4,8 @@ Created on Wed Mar  2 15:35:25 2022
 
 @author: Yigan
 """
+import math
+
 from . import graph
 from . import statemachine as st
 from . import mainalgo as ma
@@ -172,24 +174,36 @@ class AnglePruneState(st.State):
             return
 
         pruneT = np.pi * app_st().etThresh / 100.0
-        raw_threshold = app_st().etThresh / 100.0
+        raw_threshold = math.sin(np.pi * app_st().etThresh / 100.0 /2)
 
         print("threshold is "+ str(raw_threshold))
 
         prune_algo = AnglePruningAlgo(algo_st().algo.graph, algo_st().algo.npGraph)
         tRec().stamp("start of angle function and cluster")
         centroid_graph, centroid_points_color, reward_list, cost_list, original_graph = prune_algo.prune(pruneT)
-
+        tRec().stamp("compute angle function and cluster")
         dynamic_tree, dynamic_tree_list = prune_algo.dynamic_prune(raw_threshold)
+
         dynamic_graph = dynamic_tree.to_graph()
         #TODO make a graph with color list for dynamic_tree_list
 
-        dynamicConfig = ma.get_dynamic_result_config(get_size())
+        dynamic_full_graph, dynamic_color_list = dynamic_tree.to_colored_graph(dynamic_tree_list)
+        dynamic_color_list = graph.get_color_list(dynamic_color_list)
 
-        ds.Display.current().draw_layer(dynamic_graph, dynamicConfig, ds.angle)
+        dynamicConfig = ma.get_dynamic_result_config(get_size())
+        dynamicFullConfig = ma.get_dynamic_result_config(get_size())
+
+        dynamicFullConfig.edgeConfig.edge_color = dynamic_color_list
+
+        tRec().stamp("compute dynamic tree list")
+
+        ds.Display.current().draw_layer(dynamic_graph, dynamicConfig, ds.dynamic)
         tRec().stamp("draw dynamic graph")
 
-        tRec().stamp("compute angle function and cluster")
+        ds.Display.current().draw_layer(dynamic_full_graph, dynamicFullConfig, ds.full_dynamic)
+        tRec().stamp("draw full dynamic graph")
+
+
         peConfig = ma.get_angular_config(get_size())
         centroid_peConfig = ma.get_angular_centroid_config(get_size())
 
@@ -202,8 +216,8 @@ class AnglePruneState(st.State):
         peConfig.pointConfig.face_color = point_colors
         peConfig.edgeConfig.edge_color = edge_colors
 
-        #ds.Display.current().draw_layer(algo_st().graph, peConfig, ds.angle)
-        #tRec().stamp("draw cluster by angles")
+        ds.Display.current().draw_layer(algo_st().graph, peConfig, ds.angle)
+        tRec().stamp("draw cluster by angles")
 
         centroid_peConfig.pointConfig.edge_color = centroid_points_color
         centroid_peConfig.pointConfig.face_color = centroid_points_color
@@ -226,10 +240,8 @@ class AnglePruneState(st.State):
         ds.Display.current().draw_layer(PCST_result_graph, PCST_result_peConfig, ds.pcstResult)
         tRec().stamp("draw_PCST_result")
 
-        skeleton_result_peConfig = ma.get_skeleton_result_config(get_size())
-
-        #TODO
-        #ds.Display.current().draw_edge_layer(skeleton_result_graph, skeleton_result_peConfig, ds.skeletonResult)
+        # TODO
+        #skeleton_result_peConfig = ma.get_skeleton_result_config(get_size())
         #ds.Display.current().draw_layer(skeleton_result_graph, skeleton_result_peConfig, ds.skeletonResult)
-        tRec().stamp("draw_skeleton_result")
+        #tRec().stamp("draw_skeleton_result")
 
