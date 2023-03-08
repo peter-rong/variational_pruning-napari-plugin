@@ -209,26 +209,6 @@ def get_edge_vertices(img : BinaryImage):
     ids = np.where(con > 0)
     idcomp = np.transpose(np.array([ids[0],ids[1]]))
     return idcomp + [-0.5,-0.5]
-    '''
-    s = set()
-    numRow, numCol = img.data.shape
-    for r in range(numRow):
-        for c in range(numCol):
-            if(img.data[r,c] == 1):
-                neighbors = [(r-1,c),(r+1,c), (r,c+1), (r,c-1)]
-                for nr,nc in neighbors:
-                    if(nr < 0 or nr >= numRow or nc < 0 or nc >= numCol or img.data[nr,nc] == 0):
-                         if(r == nr):
-                            vc = float(abs(c+nc))/2
-                            s.add((r-0.5,vc))
-                            s.add((r+0.5,vc))
-                         else:
-                            vr = float(abs(r+nr))/2
-                            s.add((vr,c-0.5))
-                            s.add((vr,c+0.5)) 
-                
-    return list(s)
-    '''      
 
 def get_voronoi(points : list) -> VoronoiDiagram:
     return VoronoiDiagram(points)

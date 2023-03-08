@@ -142,6 +142,7 @@ class DebugWidget(QWidget):
         self.show_skeleton_result_box = self.__make_box("show skeleton result", 400)
         self.show_dynamic_box = self.__make_box("show dynamic", 440)
         self.show_full_dynamic_box = self.__make_box("show full dynamic", 480)
+        self.output_skeleton = self.__make_box("output skeleton graph", 520)
 
         WidgetManager.inst().add(self)
     
@@ -160,6 +161,7 @@ class DebugWidget(QWidget):
         config.show_skeleton_result = self.show_skeleton_result_box.isChecked()
         config.show_dynamic = self.show_dynamic_box.isChecked()
         config.show_full_dynamic = self.show_full_dynamic_box.isChecked()
+        config.output_skeleton = self.output_skeleton.isChecked()
 
         Display.current().set_config(config)
     

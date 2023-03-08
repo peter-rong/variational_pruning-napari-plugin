@@ -22,6 +22,7 @@ full_dynamic = "full dynamic"
 pcst = "pcst" #pr
 pcstResult = "pcst result"
 skeletonResult = "skeleton result"
+outputSkeleton = "output skeleton"
 
 
 class DisplayConfig:
@@ -40,6 +41,7 @@ class DisplayConfig:
         self.show_pcst = False
         self.show_pcst_result = False
         self.show_skeleton_result = False
+        self.output_skeleton = False
     
     def flag_raise(self, name : str) -> bool:
         if name == boundary:
@@ -68,6 +70,8 @@ class DisplayConfig:
             return self.show_pcst_result
         if name == skeletonResult:
             return self.show_skeleton_result
+        if name == outputSkeleton:
+            return self.output_skeleton
         return False
         
 

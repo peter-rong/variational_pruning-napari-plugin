@@ -128,10 +128,7 @@ class PruneChoosingState(st.State):
     def get_next(self):
         return ETPruneState() if app_st().method == 0 else AngleState()
 
-
 class AngleState(st.State):
-
-
     def execute(self): 
         
         if algo_st().algo is None:
@@ -166,6 +163,9 @@ class ETPruneState(st.State):
         ds.Display.current().draw_layer(algo_st().final, peConfig, ds.final)
         tRec().stamp("Draw Final")
 
+        #outputing skeleton graph as a txt file
+        if ds.Display.current().config.flag_raise(ds.outputSkeleton):
+            print("here")
 
 class AnglePruneState(st.State):
 
@@ -174,7 +174,7 @@ class AnglePruneState(st.State):
             return
 
         pruneT = np.pi * app_st().etThresh / 100.0
-        raw_threshold = math.sin(np.pi * app_st().etThresh / 100.0 /2)
+        raw_threshold = app_st().etThresh / 100.0
 
         print("threshold is "+ str(raw_threshold))
 

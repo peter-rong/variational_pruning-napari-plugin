@@ -5,7 +5,7 @@ Created on Mon Feb 21 13:28:18 2022
 @author: Yigan
 """
 
-from .graph import Graph, dist2D,midPoint, prune_graph, getCentroid, rgb_to_hex
+from .graph import Graph, dist2D, midPoint, prune_graph, getCentroid, rgb_to_hex
 from queue import PriorityQueue
 import sys
 from collections import deque
@@ -29,6 +29,7 @@ class Node:
         self.paths = set()
         self.cost = 0
         self.posClusterIndex = -1
+        self.index = -1
         self.inSol = True
         self.reward = 0
 
@@ -136,11 +137,14 @@ class Path:
         self.clusterPointIndex = None
         self.clusterEdgeIndex = None
         self.inSol = True
+        # TODO check how segval is computed
 
 
 class NodePathGraph:
 
     def to_dynamic_tree(self) -> DynamicTree:
+
+        # TODO check conversion
 
         total_reward = 0
         min_cost = math.inf
@@ -154,8 +158,8 @@ class NodePathGraph:
 
         hasCore = False
         for path in self.paths:
-            total_reward += (math.sin(path.theta)*path.length)
-            min_cost = min(min_cost,path.length/2)
+            total_reward += (math.sin(path.theta) * path.length)
+            min_cost = min(min_cost, path.length / 2)
             if path.isCore:
                 path.one.isCore = True
                 path.other.isCore = True
@@ -170,10 +174,11 @@ class NodePathGraph:
                 node_reward = 0
                 node_cost = 0
                 for path in node.paths:
-                    node_reward += (math.sin(path.theta)*path.length /2)
-                    node_cost += path.length/2
+                    # TODO why is this path.theta not path/theta/2
+                    node_reward += (math.sin(path.theta / 2) * path.length / 2)
+                    node_cost += path.length / 2
 
-                new_node = DynamicTreeNode(node.point,node_reward,node_cost)
+                new_node = DynamicTreeNode(node.point, node_reward, node_cost)
                 dynamicTree.add_node(new_node)
                 node_map[node] = new_node
             else:
@@ -182,7 +187,8 @@ class NodePathGraph:
                 core_node_y += node.point[1]
 
         if core_node_count > 0:
-            core_node = DynamicTreeNode([core_node_x/core_node_count, core_node_y/core_node_count], total_reward, min_cost)
+            core_node = DynamicTreeNode([core_node_x / core_node_count, core_node_y / core_node_count], total_reward,
+                                        min_cost)
             dynamicTree.add_node(core_node)
 
         for path in self.paths:
@@ -190,14 +196,13 @@ class NodePathGraph:
                 new_edge = DynamicTreeEdge(node_map[path.one], node_map[path.other])
                 dynamicTree.add_edge(new_edge)
             elif path.one.isCore and not path.other.isCore:
-                new_edge = DynamicTreeEdge(node_map[path.other],core_node)
+                new_edge = DynamicTreeEdge(node_map[path.other], core_node)
                 dynamicTree.add_edge(new_edge)
             elif path.other.isCore and not path.one.isCore:
                 new_edge = DynamicTreeEdge(node_map[path.one], core_node)
                 dynamicTree.add_edge(new_edge)
 
         return dynamicTree
-
 
     def __init__(self, points, edges, radi, ma):
         self.max = ma
@@ -217,6 +222,42 @@ class NodePathGraph:
             node1.add_path(path)
             node2.add_path(path)
             self.paths.append(path)
+
+    def to_graph(self):
+
+        point_list = []
+        thickness_list = []
+        edge_list = []
+
+        #
+        graph = Graph()
+
+    def to_skeleton_text_file(self, graph: Graph, ):
+
+        resulting_text = 'The skeleton graph has:\nSECTION Graph\n'
+        node_count, edge_count = len(self.nodes), len(self.paths)
+        resulting_text += 'Nodes ' + str(node_count) + '\nEdges ' + str(edge_count) + '\n'
+
+        terminal_count = 0
+        terminal_text = ''
+
+        # TODO
+        # need to fix sys.maxsize/2 and convert into the total cost
+        for i in range(len(graph.points)):
+            if reward_list[i] != sys.maxsize / 2:
+                resulting_text += 'N ' + str((i + 1)) + ' ' + str(reward_list[i]) + '\n'
+            else:
+                terminal_count += 1
+                terminal_text += 'TP ' + str((i + 1)) + ' ' + str(0) + '\n'
+
+        for j in range(len(graph.edgeIndex)):
+            resulting_text += 'E ' + str((graph.edgeIndex[j][0] + 1)) + ' ' + str(
+                (graph.edgeIndex[j][1] + 1)) + ' ' + str(abs(cost_list[j])) + '\n'
+
+        resulting_text += 'END' + '\n' + '\n' + 'SECTION Terminals' + '\n' + 'Terminals ' + str(terminal_count) + '\n'
+        resulting_text += terminal_text + 'END' + '\n' + '\n' + 'EOF'
+
+        return resulting_text
 
     def get_negative_degree_one_path(self) -> list():
         ans = list()
@@ -342,7 +383,7 @@ class ETPruningAlgo(PruningAlgo):
         super().__init__(g, npg)
 
     def prune(self, thresh: float) -> Graph:
-        # todo
+
         removed = set()
         d_ones = self.npGraph.get_degree_ones()
         pq = PriorityQueue()
@@ -438,9 +479,9 @@ class AnglePruningAlgo(PruningAlgo):
         alpha_list, tree_list = self.generate_dynamic_tree()
 
         result_tree = tree_list[-1]
-        for i in range(1,len(alpha_list)):
+        for i in range(1, len(alpha_list)):
             if alpha_list[i] > thresh:
-                result_tree = tree_list[i-1]
+                result_tree = tree_list[i - 1]
                 break
 
         return result_tree, tree_list
@@ -557,20 +598,15 @@ class AnglePruningAlgo(PruningAlgo):
             endpoints = cluster_endpoints(neg_c)
             point_one, point_two = endpoints[0], endpoints[1]
 
-            # pair_dict_key = []
-            # pair_dict_value = list()
-
             edge = []
 
             if point_one.posClusterIndex > -1:
                 clusterIndex = point_one.posClusterIndex
                 edge.append(clusterIndex)
-                # pair_dict_key.append(tuple(getCentroid(non_negative_clusters[clusterIndex])))
 
             if point_two.posClusterIndex > -1:
                 clusterIndex = point_two.posClusterIndex
                 edge.append(clusterIndex)
-                # pair_dict_key.append(tuple(getCentroid(non_negative_clusters[clusterIndex])))
 
             for j in junctions:
                 if j == point_one or j == point_two:
@@ -579,15 +615,9 @@ class AnglePruningAlgo(PruningAlgo):
                             edge.append(i)
                             # pair_dict_key.append(tuple(point_list[i]))
                             break
-            # print(edge)
-
-            # pair_dict_key = tuple(pair_dict_key)
 
             for path in neg_c:
                 path.clusterEdgeIndex = len(edge_list)
-                # pair_dict_value.append([path.one.point, path.other.point])
-
-            # point_pair_map[pair_dict_key] = pair_dict_value
 
             edge_list.append(edge)
             edge_cost_list.append(cost)
@@ -635,7 +665,7 @@ class AnglePruningAlgo(PruningAlgo):
             if p.isCore:
                 p.segval = 10 * p.length  # big enough
             else:
-                p.segval = (math.sin(p.theta/2) - math.sin(thresh/2)) * p.length
+                p.segval = (math.sin(p.theta / 2) - math.sin(thresh / 2)) * p.length
 
         path_to_neglect = self.npGraph.get_negative_degree_one_path()
         while len(path_to_neglect) > 0:
@@ -829,5 +859,3 @@ class AnglePruningAlgo(PruningAlgo):
                 cluster_paths.append(cluster_path)
 
         # graph with networkx
-
-
