@@ -229,35 +229,38 @@ class NodePathGraph:
         thickness_list = []
         edge_list = []
 
-        #
-        graph = Graph()
+        index = 0
 
-    def to_skeleton_text_file(self, graph: Graph, ):
+        for node in self.nodes:
+            node.index = index
+            index += 1
+            point_list.append(node.point)
+            thickness_list.append(node.radius)
 
-        resulting_text = 'The skeleton graph has:\nSECTION Graph\n'
+        for path in self.paths:
+            edge_list.append([path.one.index, path.other.index])
+
+        return Graph(point_list, edge_list), thickness_list
+
+    def to_skeleton_text_file(self):
+
+        graph, thickness_list = self.to_graph()
+        resulting_text = 'The skeleton graph has: '
         node_count, edge_count = len(self.nodes), len(self.paths)
-        resulting_text += 'Nodes ' + str(node_count) + '\nEdges ' + str(edge_count) + '\n'
+        resulting_text += 'Nodes ' + str(node_count) + ' and ' + str(edge_count) + ' Edges. \n'
 
-        terminal_count = 0
-        terminal_text = ''
-
-        # TODO
-        # need to fix sys.maxsize/2 and convert into the total cost
         for i in range(len(graph.points)):
-            if reward_list[i] != sys.maxsize / 2:
-                resulting_text += 'N ' + str((i + 1)) + ' ' + str(reward_list[i]) + '\n'
-            else:
-                terminal_count += 1
-                terminal_text += 'TP ' + str((i + 1)) + ' ' + str(0) + '\n'
+            resulting_text += 'N ' + str(i) + ' (' + str(graph.points[i][0]) + ',' \
+                              + str(graph.points[i][1]) + ') ' + str(thickness_list[i]) + '\n'
 
-        for j in range(len(graph.edgeIndex)):
-            resulting_text += 'E ' + str((graph.edgeIndex[j][0] + 1)) + ' ' + str(
-                (graph.edgeIndex[j][1] + 1)) + ' ' + str(abs(cost_list[j])) + '\n'
+        for edge in graph.edgeIndex:
+            resulting_text += 'E (' + str(edge[0]) + ',' + str(edge[1]) + ')' + '\n'
 
-        resulting_text += 'END' + '\n' + '\n' + 'SECTION Terminals' + '\n' + 'Terminals ' + str(terminal_count) + '\n'
-        resulting_text += terminal_text + 'END' + '\n' + '\n' + 'EOF'
+        f = open("skeleton_graph.txt", "w+")
+        f.truncate(0)
+        f.write(resulting_text)
 
-        return resulting_text
+        f.close()
 
     def get_negative_degree_one_path(self) -> list():
         ans = list()

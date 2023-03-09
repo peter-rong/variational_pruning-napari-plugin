@@ -148,7 +148,12 @@ class ETPruneState(st.State):
     def execute(self):
         if algo_st().algo is None:
             return
-        
+
+        #outputing skeleton graph as a txt file
+        if ds.Display.current().config.flag_raise(ds.outputSkeleton):
+            algo_st().algo.npGraph.to_skeleton_text_file()
+            print("I'm here")
+
         prune_algo = ETPruningAlgo(algo_st().algo.graph, algo_st().algo.npGraph)
         pruneT = app_st().etThresh / 100.0 * max(app_st().shape)
         algo_st().final = prune_algo.prune(pruneT)
@@ -162,10 +167,6 @@ class ETPruneState(st.State):
         
         ds.Display.current().draw_layer(algo_st().final, peConfig, ds.final)
         tRec().stamp("Draw Final")
-
-        #outputing skeleton graph as a txt file
-        if ds.Display.current().config.flag_raise(ds.outputSkeleton):
-            print("here")
 
 class AnglePruneState(st.State):
 
