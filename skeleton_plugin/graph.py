@@ -12,16 +12,20 @@ from scipy.spatial import Voronoi
 from matplotlib import cm
 from matplotlib import colors as cl
 
+
 def get_color_value(color):
     return np.average(color[0:2])
 
-def dist2D(p1,p2):
-    return math.sqrt(math.pow(p1[0]-p2[0],2) + math.pow(p1[1]-p2[1],2))
 
-def midPoint(p1,p2):
-    return [(p1[0]+p2[0])/2, (p1[1]+p2[1])/2]
+def dist2D(p1, p2):
+    return math.sqrt(math.pow(p1[0] - p2[0], 2) + math.pow(p1[1] - p2[1], 2))
+
+
+def midPoint(p1, p2):
+    return [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2]
+
+
 def getCentroid(path_list):
-
     point_list = []
 
     for p in path_list:
@@ -35,19 +39,19 @@ def getCentroid(path_list):
         y += i[1]
     x = x / (len(point_list))
     y = y / (len(point_list))
-    return [x,y]
+    return [x, y]
+
 
 class BinaryImage:
-    
     """
     rawData : in the form of a matrix of [r,g,b,a] value
     """
-    def __init__(self, rawData : np.ndarray, thresh : int):
-        
-        numRow,numCol,colorSize = rawData.shape;
-        
-        self.data = np.zeros((numRow,numCol))
-        flags = rawData[:,:,0] > thresh
+
+    def __init__(self, rawData: np.ndarray, thresh: int):
+        numRow, numCol, colorSize = rawData.shape;
+
+        self.data = np.zeros((numRow, numCol))
+        flags = rawData[:, :, 0] > thresh
         self.data[flags] = 1
         '''
         for r in range(numRow):
@@ -55,16 +59,17 @@ class BinaryImage:
                 color_value = get_color_value(rawData[r,c])
                 self.data[r,c] = 0 if color_value < thresh else 1
         '''
-    
-    def position_is_bright(self, x : float, y : float) -> bool:
+
+    def position_is_bright(self, x: float, y: float) -> bool:
         xint = int(x)
         yint = int(y)
-        numRow,numCol = self.data.shape;
-        return xint >= 0 and yint >= 0 and xint < numRow and y < numCol and self.data[xint,yint] == 1
+        numRow, numCol = self.data.shape;
+        return xint >= 0 and yint >= 0 and xint < numRow and y < numCol and self.data[xint, yint] == 1
+
 
 class Graph:
-    
-    def __init__(self, point_list : list, edge : list, point_ids : list = None, edge_ids : list = None):
+
+    def __init__(self, point_list: list, edge: list, point_ids: list = None, edge_ids: list = None):
         self.points = point_list
         self.edgeIndex = edge
         self.point_ids = self.__build_point_ids(point_ids)
@@ -88,24 +93,23 @@ class Graph:
             x = e[0]
             y = e[1]
             if x >= 0 and y >= 0:
-                edges.append([self.points[x],self.points[y]])
+                edges.append([self.points[x], self.points[y]])
         return np.array(edges)
-    
-    def __build_edges_ids(self, eds : list):
+
+    def __build_edges_ids(self, eds: list):
         if eds is None or len(eds) != len(self.edgeIndex):
-            return list(range(0,len(self.edgeIndex)))
+            return list(range(0, len(self.edgeIndex)))
         else:
             return eds
-        
 
-    def __build_point_ids(self, ids : list):
+    def __build_point_ids(self, ids: list):
         if ids is None or len(ids) != len(self.points):
-            return list(range(0,len(self.points)))
+            return list(range(0, len(self.points)))
         else:
             return ids
 
-def cluster_to_skeleton(graph:Graph, original_graph):
 
+def cluster_to_skeleton(graph: Graph, original_graph):
     point_include = graph.point_include
     edge_include = graph.edgeIndex_include
 
@@ -126,23 +130,24 @@ def cluster_to_skeleton(graph:Graph, original_graph):
                 path.other.inSol == False
 
     return original_graph
-#this also need more fix
+
+
+# this also need more fix
 class VoronoiDiagram:
-    
-    def __init__(self, point_list : list):
+
+    def __init__(self, point_list: list):
         self.vor = Voronoi(point_list)
         self.vert_to_regions = self.__build_vert_to_region()
         self.region_to_site = self.__build_region_to_site()
         self.graph = Graph(self.vor.vertices, self.vor.ridge_vertices)
-        
-    
-    def closest_site(self, vertex_id : int) -> (int, float):
+
+    def closest_site(self, vertex_id: int) -> (int, float):
         if vertex_id < 0 or vertex_id >= len(self.vor.vertices):
-            return ([],-1)
-        
-        vertex = self.vor.vertices[vertex_id]       
+            return ([], -1)
+
+        vertex = self.vor.vertices[vertex_id]
         regions = self.vert_to_regions[vertex_id]
-        
+
         dist = float("inf")
         cursite = 0
         for r in regions:
@@ -152,34 +157,31 @@ class VoronoiDiagram:
             if curdist < dist:
                 dist = curdist
                 cursite = siteid
-        
-        return (cursite,dist) 
-    
-    def edge_angle(self, eid : int) -> float:
+
+        return (cursite, dist)
+
+    def edge_angle(self, eid: int) -> float:
         edge = self.vor.ridge_vertices[eid]
         points = self.vor.ridge_points[eid]
         p1 = self.vor.points[points[0]]
         p2 = self.vor.points[points[1]]
-        
+
         v1 = self.vor.vertices[edge[0]]
         v2 = self.vor.vertices[edge[1]]
-        center = np.mean(np.array([v1,v2]), axis = 0)
-        
-        
-        norm1 = (p1-center)/np.linalg.norm(p1-center)
-        norm2 = (p2-center)/np.linalg.norm(p2-center)
-        dot = np.dot(norm1,norm2)
+        center = np.mean(np.array([v1, v2]), axis=0)
+
+        norm1 = (p1 - center) / np.linalg.norm(p1 - center)
+        norm2 = (p2 - center) / np.linalg.norm(p2 - center)
+        dot = np.dot(norm1, norm2)
         if dot > 1:
             dot = 1
         if dot < -1:
             dot = -1
         angle = np.arccos(dot)
         return angle
-        
-        
-    
+
     def __build_vert_to_region(self):
-        
+
         dic = dict()
         for rid in range(len(self.vor.regions)):
             region = self.vor.regions[rid]
@@ -189,9 +191,9 @@ class VoronoiDiagram:
                         dic[vid] = list()
                     dic[vid].append(rid)
         return dic
-    
+
     def __build_region_to_site(self):
-        
+
         dic = dict()
         for pid in range(len(self.vor.point_region)):
             rid = self.vor.point_region[pid]
@@ -200,81 +202,83 @@ class VoronoiDiagram:
         return dic
 
 
-def get_edge_vertices(img : BinaryImage):
-    
-    filt = np.array([[1,1],[1,1]])
-    con = convolve2d(img.data,filt,mode='same')
+def get_edge_vertices(img: BinaryImage):
+    filt = np.array([[1, 1], [1, 1]])
+    con = convolve2d(img.data, filt, mode='same')
     tf = con >= 4
     con[tf] = 0
     ids = np.where(con > 0)
-    idcomp = np.transpose(np.array([ids[0],ids[1]]))
-    return idcomp + [-0.5,-0.5]
+    idcomp = np.transpose(np.array([ids[0], ids[1]]))
+    return idcomp + [-0.5, -0.5]
 
-def get_voronoi(points : list) -> VoronoiDiagram:
+
+def get_voronoi(points: list) -> VoronoiDiagram:
     return VoronoiDiagram(points)
 
 
-def prune_graph(graph : Graph, flags : list) -> Graph:
+def prune_graph(graph: Graph, flags: list) -> Graph:
     new_points = list()
     new_ids = list()
     prune_index = [-1] * len(graph.points)
     numPruned = 0
     for i in range(len(flags)):
-        if flags[i] == 1 :
+        if flags[i] == 1:
             prune_index[i] = numPruned
             new_points.append(graph.points[i])
             new_ids.append(graph.point_ids[i])
         else:
             numPruned += 1
-    
+
     new_edges = list()
     edge_ids = list()
     for j in range(len(graph.edgeIndex)):
         e = graph.edgeIndex[j]
-    #for e in graph.edgeIndex:
+        # for e in graph.edgeIndex:
         ex = e[0]
         ey = e[1]
-        if ex >= 0 and ey >= 0:            
-            if prune_index[ex] >= 0 and prune_index[ey] >= 0: 
+        if ex >= 0 and ey >= 0:
+            if prune_index[ex] >= 0 and prune_index[ey] >= 0:
                 ex -= prune_index[ex]
                 ey -= prune_index[ey]
-                new_edges.append([ex,ey])
+                new_edges.append([ex, ey])
                 edge_ids.append(graph.edge_ids[j])
-                
+
     return Graph(new_points, new_edges, new_ids, edge_ids)
+
 
 '''
 pruned graph
 '''
-def graph_in_image(vor : Graph, img : BinaryImage) -> Graph:
-    flags = [0]*len(vor.points)
+
+
+def graph_in_image(vor: Graph, img: BinaryImage) -> Graph:
+    flags = [0] * len(vor.points)
     for i in range(len(vor.points)):
         p = vor.points[i]
-        if img.position_is_bright(p[0],p[1]):
+        if img.position_is_bright(p[0], p[1]):
             flags[i] = 1
     return prune_graph(vor, flags)
 
 
-
-
-
 """Closest Site Graph"""
-def closest_site_graph(vor : VoronoiDiagram) -> Graph:
-    
+
+
+def closest_site_graph(vor: VoronoiDiagram) -> Graph:
     points = list()
     edges = list()
-    
+
     index = 0
     for vid in range(len(vor.vor.vertices)):
-        siteid,dist = vor.closest_site(vid)
+        siteid, dist = vor.closest_site(vid)
         points.append(vor.vor.vertices[vid])
         points.append(vor.vor.points[siteid])
-        edges.append([index,index+1])
+        edges.append([index, index + 1])
         index += 2
-    return Graph(points,edges)
+    return Graph(points, edges)
 
-def get_closest_dists(pids : list, vor : VoronoiDiagram) -> list:
-    #result = list()
+
+def get_closest_dists(pids: list, vor: VoronoiDiagram) -> list:
+    # result = list()
     result = [vor.closest_site(pid)[1] for pid in pids]
     '''
     for pid in pids:
@@ -283,16 +287,17 @@ def get_closest_dists(pids : list, vor : VoronoiDiagram) -> list:
     '''
     return result
 
-def get_angle(eids : list, vor : VoronoiDiagram)-> list:
-    result = [vor.edge_angle(eid) for eid in eids] 
+def get_angle(eids: list, vor: VoronoiDiagram) -> list:
+    result = [vor.edge_angle(eid) for eid in eids]
     return result
-    
 
-def get_color_list(dist : list) -> list:   
-    data = np.array(dist) 
+
+def get_color_list(dist: list) -> list:
+    data = np.array(dist)
     if np.max(data) == np.min(data):
-        return ["blue"]*len(dist)
+        return ["blue"] * len(dist)
     norm = (data - np.min(data)) / (np.max(data) - np.min(data))
+    norm = norm * 0.8 + 0.2
     clist = cm.rainbow(norm)
     '''
     for c in clist:
@@ -300,39 +305,43 @@ def get_color_list(dist : list) -> list:
     '''
     return [cl.to_hex(c) for c in clist]
 
-def get_edge_color_list(colors : list, edges:list) -> list:
+
+def get_edge_color_list(colors: list, edges: list) -> list:
     col = list()
     for e in edges:
         x = e[0]
         y = e[1]
         col1 = cl.to_rgb(colors[x])
         col2 = cl.to_rgb(colors[y])
-        col.append(cl.to_hex((np.array(col1)+np.array(col2))/2))
-    return col  
+        col.append(cl.to_hex((np.array(col1) + np.array(col2)) / 2))
+    return col
 
-def get_three_color_list(dist : list) -> list:
+
+def get_three_color_list(dist: list) -> list:
     m = max(dist)
     norm = [1.0 if d >= m else 0.75 if d > 0 else 0 for d in dist]
     clist = cm.rainbow(norm)
     return [cl.to_hex(c) for c in clist]
 
+
 def rgb_to_hex(rgb):
-    return '#'+'%02x%02x%02x' % rgb
+    return '#' + '%02x%02x%02x' % rgb
 
 
 def get_random_green():
-    return 51, random.randint(123,255), 51
+    return 51, random.randint(123, 255), 51
+
 
 def get_random_red():
-    return random.randint(123,255), 51, 51
+    return random.randint(123, 255), 51, 51
 
-def get_color_from_edge(paths:list) -> list:
 
+def get_color_from_edge(paths: list) -> list:
     dict = {}
     colors = []
 
-    black = (0,0,0)
-    gray = (128,128,128)
+    black = (0, 0, 0)
+    gray = (128, 128, 128)
 
     for p in paths:
 
@@ -345,7 +354,7 @@ def get_color_from_edge(paths:list) -> list:
             if p.clusterNumber in dict:
                 colors.append(dict[p.clusterNumber])
             else:
-                color = (0,0,0)
+                color = (0, 0, 0)
                 if p.colorvalue > 0:
                     color = get_random_green()
                 else:
@@ -354,6 +363,7 @@ def get_color_from_edge(paths:list) -> list:
                 colors.append(dict[p.clusterNumber])
 
     return [rgb_to_hex(c) for c in colors]
+
 
 '''
 colors = ["#FFFFFF","#FFFF00","#FF0000", "#000000"] 
@@ -400,4 +410,4 @@ dist = [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7]
 rainbow = cm.rainbow(dist)
 print(rainbow)
 '''
-#print(cl.to_hex(rainbow))
+# print(cl.to_hex(rainbow))

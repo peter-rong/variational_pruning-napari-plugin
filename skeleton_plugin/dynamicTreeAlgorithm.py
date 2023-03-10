@@ -25,7 +25,8 @@ class Algorithm:
     def print_result(self):
         for i in range(len(self.alpha_list)):
             print("alpha = " + str(self.alpha_list[i]) +
-                  " and tree has " + str(len(self.tree_list[i].nodes)) + " nodes")
+                  " and tree has " + str(len(self.tree_list[i].nodes)) + " nodes"
+                  +" and has "+ str(len(self.tree_list[i].edges)) + " edges")
 
     def execute(self, input_tree):
 
@@ -202,12 +203,14 @@ class Algorithm:
 
             if curr_node == curr_edge.one:
                 curr_edge.one_to_other_cost -= min_edge_cost
-                if curr_edge.one_to_other_cost< 0:
-                    print("wrong here" + str(curr_edge.one_to_other_cost))
+                if curr_edge.one_to_other_cost < 0:
+                    print("float-point error " + str(curr_edge.one_to_other_cost))
+                    curr_edge.one_to_other_cost = 0 #amendament from value lost in float point calculation
             elif curr_node == curr_edge.other:
                 curr_edge.other_to_one_cost -= min_edge_cost
-                if curr_edge.other_to_one_cost< 0:
-                    print("wrong here2"+ str(curr_edge.other_to_one_cost))
+                if curr_edge.other_to_one_cost < 0:
+                    print("float-point error "+ str(curr_edge.other_to_one_cost))
+                    curr_edge.other_to_one_cost = 0  # amendament from value lost in float point calculation
             else:
                 print("so wrong")
 

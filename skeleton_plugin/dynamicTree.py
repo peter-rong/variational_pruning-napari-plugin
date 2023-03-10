@@ -9,6 +9,7 @@ class DynamicTreeNode:
         self.point = point
         self.reward = r
         self.cost = c
+        self.initial_cost = c
         self.visitOnce = False
         self.isOldNode = False
         self.score = r  # temporary score
