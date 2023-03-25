@@ -18,7 +18,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import networkx as nx
 
-
 class Node:
 
     def __init__(self, p, r: float, ma: float):
@@ -512,7 +511,6 @@ def has_endpoint(cluster: list, node: Node):
 
     return False
 
-
 def cluster_endpoints(c: list) -> list:
     points_list, connecting_points = list(), list()
     dict = {}
@@ -531,7 +529,6 @@ def cluster_endpoints(c: list) -> list:
             connecting_points.append(key)
 
     return connecting_points
-
 
 class AnglePruningAlgo(PruningAlgo):
 
@@ -585,7 +582,7 @@ class AnglePruningAlgo(PruningAlgo):
                 result_tree = tree_list[i - 1]
                 break
 
-        return result_tree, tree_list, reward_list
+        return result_tree, tree_list, reward_list, alpha_list
 
     # gives output file for the dapcstp solver
     def prune(self, thresh: float):

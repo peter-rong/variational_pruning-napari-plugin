@@ -33,12 +33,14 @@ class AppStatus:
         self.etThresh = 0
         self.method = 0
         self.shape = None
-        
 
 class SkeletonApp:
     
     __current = None
     etThresh = 10
+    hasSolution = False
+    dynamicTreeList = []
+    dynamicTreeAlphaList = []
     
     def __init__(self):
         self.algoStatus = AlgoStatus()
@@ -55,9 +57,15 @@ class SkeletonApp:
     def run(self):
         self.timer.clear()
         self.timer.stamp("Start")
+        if not self.hasSolution:
+            print("No solution yet")
+        else:
+            print("has solution")
         self.stm.change_state(aps.ReadState())
-        
+
         self.__runall()
+        self.hasSolution = True #TODO put this somewhere in the appstates
+
         self.timer.print_records()
     
     def reset_bithresh(self, newT : float):
@@ -73,17 +81,22 @@ class SkeletonApp:
     
     def reset_method(self, met : float):
         self.appStatus.method = met
+        print("im here")
     
     def reset_algo(self):
         self.algoStatus = AlgoStatus()
-        
+
+        print("successful reset")
+
+        self.hasSolution = False
+        self.dynamicTreeList = []
+        self.dynamicTreeAlphaList = []
         
     def __runall(self):
         while self.stm.valid():
             self.stm.execute()
             self.stm.to_next()
-    
-    
+
 
 def run():
     # ta.test_boundary_edge([]);

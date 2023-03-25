@@ -10,10 +10,8 @@ from .pruning import ETPruningAlgo
 # import testalgo as ta
 
 
-
 def show_hello_message():
     # ta.test_boundary_edge([]);
-    
     WidgetManager.inst().start()
     
     tRec = TimeRecord()

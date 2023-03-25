@@ -40,13 +40,12 @@ class WidgetManager:
         return None
 
 
-
 class MainWidget(QWidget):
 
     def __init__(self, viewer : napari.Viewer, parent=None):
         super().__init__(parent)
         self.name = main_widget
-        
+
         self.runButton = QPushButton(self)
         self.runButton.setText("Run")
         self.runButton.clicked.connect(MainWidget.run)
@@ -72,10 +71,61 @@ class MainWidget(QWidget):
         self.etSlider.sliderReleased.connect(self.set_thr_lift)
         self.etSlider.move(0,140)
         self.etSText.move(0,160)
-        
+
+        #the four sliders
+
+        #slider for naive thickness
+        s,t = self.__make_slider_label()
+        self.slider1 = s
+        self.slider1_text = t
+
+        self.slider1.valueChanged.connect(self.set_thr) #TODO link to value in mainalgo
+        self.slider1.sliderReleased.connect(self.set_thr_lift) #TODO need to change this (don't want it update real time)
+        self.slider1.move(0, 200)
+        self.slider1_text.setText("Thickness: " + str(self.slider1.value()) + "%")
+        self.slider1_text.move(0, 220)
+
+        # slider for naive angle
+        s, t = self.__make_slider_label()
+        self.slider2 = s
+        self.slider2_text = t
+
+        self.slider2.valueChanged.connect(self.set_thr)  # TODO link to value in mainalgo
+        self.slider2.sliderReleased.connect(self.set_thr_lift)  # TODO need to change this (don't want it update real time)
+        self.slider2.move(0, 260)
+        self.slider2_text.setText("Angle: " + str(self.slider2.value()) + "%")
+        self.slider2_text.move(0, 280)
+
+        # slider for ET
+        s, t = self.__make_slider_label()
+        self.slider3 = s
+        self.slider3_text = t
+
+        self.slider3.valueChanged.connect(self.set_thr)  # TODO link to value in mainalgo
+        self.slider3.sliderReleased.connect(self.set_thr_lift)  # TODO need to change this (don't want it update real time)
+        self.slider3.move(0, 320)
+        self.slider3_text.setText("Erosion : " + str(self.slider3.value()) + "%")
+        self.slider3_text.move(0, 340)
+
+        # slider for dynamic angle method
+        s, t = self.__make_slider_label()
+        self.slider4 = s
+        self.slider4_text = t
+
+        self.slider4.valueChanged.connect(self.set_thr)  # TODO link to value in mainalgo
+        self.slider4.sliderReleased.connect(self.set_thr_lift)  # TODO need to change this (don't want it update real time)
+        self.slider4.move(0, 380)
+        self.slider4_text.setText("Dynamic angle : " + str(self.slider4.value()) + "%")
+        self.slider4_text.move(0, 400)
+
+        self.fullModeBox = QCheckBox(self)
+        self.fullModeBox.setText("Enable full mode?")
+        self.fullModeBox.move(0, 440)
+
+        #old box
         self.modeBox = QCheckBox(self)
         self.modeBox.setText("Use Angle")
-        self.modeBox.move(0, 220)
+        self.modeBox.move(0, 480)
         
         self.set_bi_thr()
         self.set_thr()
@@ -85,12 +135,10 @@ class MainWidget(QWidget):
     def sync(self):
         c = self.modeBox.isChecked()
         mainalgo.SkeletonApp.inst().reset_method(1 if c else 0)
-        
     
     def run():
         WidgetManager.inst().start()
         mainalgo.SkeletonApp.inst().run()
-        
     def set_bi_thr(self):
         self.thSText.setText("thr : " + str(self.thSlider.value()) + "%")
     

@@ -15,7 +15,6 @@ from . import tree
 from . import treealgorithm
 import numpy as np
 
-
 def algo_st():
     return ma.SkeletonApp.inst().algoStatus
 
@@ -196,12 +195,14 @@ class AnglePruneState(st.State):
         centroid_graph, centroid_points_color, reward_list, cost_list, original_graph = prune_algo.prune(pruneT)
         tRec().stamp("compute angle function and cluster")
 
-        dynamic_tree, dynamic_tree_list, dynamic_reward_list = prune_algo.dynamic_prune(raw_threshold)
+        dynamic_tree, dynamic_tree_list, dynamic_reward_list, dynamic_alpha_list = prune_algo.dynamic_prune(raw_threshold)
         dynamic_graph = dynamic_tree.to_graph()
 
+        '''
         dynamic_full_graph, dynamic_color_list = dynamic_tree.to_colored_graph(dynamic_tree_list)
         dynamic_color_list = graph.get_color_list(dynamic_color_list)
-
+        
+        
         dynamicConfig = ma.get_dynamic_result_config(get_size())
         dynamicFullConfig = ma.get_dynamic_result_config(get_size())
 
@@ -211,15 +212,16 @@ class AnglePruneState(st.State):
 
         ds.Display.current().draw_layer(dynamic_graph, dynamicConfig, ds.dynamic)
 
-        '''
+        
         dynamicConfig.pointConfig.face_color = graph.get_color_list(dynamic_reward_list)  # testing
         dynamicConfig.pointConfig.edge_color = graph.get_color_list(dynamic_reward_list)  # testing
         ds.Display.current().draw_layer(dynamic_full_graph, dynamicConfig, ds.dynamic)  # testing
-        '''
+        
         tRec().stamp("draw dynamic graph")
 
         ds.Display.current().draw_layer(dynamic_full_graph, dynamicFullConfig, ds.full_dynamic)
         tRec().stamp("draw full dynamic graph")
+        '''
 
         peConfig = ma.get_angular_config(get_size())
         centroid_peConfig = ma.get_angular_centroid_config(get_size())
