@@ -164,8 +164,6 @@ class MainWidget(QWidget):
         return slider,sText
     
     
-            
-    
 
 class DebugWidget(QWidget):
     """Any QtWidgets.QWidget or magicgui.widgets.Widget subclass can be used."""

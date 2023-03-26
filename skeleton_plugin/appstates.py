@@ -15,6 +15,7 @@ from . import tree
 from . import treealgorithm
 import numpy as np
 
+
 def algo_st():
     return ma.SkeletonApp.inst().algoStatus
 
@@ -195,7 +196,8 @@ class AnglePruneState(st.State):
         centroid_graph, centroid_points_color, reward_list, cost_list, original_graph = prune_algo.prune(pruneT)
         tRec().stamp("compute angle function and cluster")
 
-        dynamic_tree, dynamic_tree_list, dynamic_reward_list, dynamic_alpha_list = prune_algo.dynamic_prune(raw_threshold)
+        dynamic_tree, dynamic_tree_list, dynamic_reward_list, dynamic_alpha_list = prune_algo.dynamic_prune(
+            raw_threshold)
         dynamic_graph = dynamic_tree.to_graph()
 
         '''
@@ -240,7 +242,7 @@ class AnglePruneState(st.State):
         peTestConfig.pointConfig.edge_color = 'blue'
         peTestConfig.pointConfig.face_color = 'blue'
 
-        ds.Display.current().draw_layer(angle_graph, peTestConfig, ds.angle) #test
+        ds.Display.current().draw_layer(angle_graph, peTestConfig, ds.angle)  # test
         # ds.Display.current().draw_layer(algo_st().graph, peConfig, ds.angle) TODO to turn back
         tRec().stamp("draw cluster by angles")
 
@@ -269,3 +271,9 @@ class AnglePruneState(st.State):
         # skeleton_result_peConfig = ma.get_skeleton_result_config(get_size())
         # ds.Display.current().draw_layer(skeleton_result_graph, skeleton_result_peConfig, ds.skeletonResult)
         # tRec().stamp("draw_skeleton_result")
+
+
+class ResponseState(st.State):
+#TODO
+    def execute(self):
+        return
