@@ -17,6 +17,7 @@ burnTime = "burn time"
 erosionT = "ET"
 final = "final"
 angle = "angle"
+thickness = "thickness"
 dynamic = "dynamic"
 full_dynamic = "full dynamic"
 pcst = "pcst" #pr
@@ -36,6 +37,7 @@ class DisplayConfig:
         self.show_et = False
         self.show_final = True
         self.show_angle = False
+        self.show_thickness = False
         self.show_dynamic = False
         self.show_full_dynamic = False
         self.show_pcst = False
@@ -60,6 +62,8 @@ class DisplayConfig:
             return self.show_final
         if name == angle:
             return self.show_angle
+        if name == thickness:
+            return self.show_thickness
         if name == dynamic:
             return self.show_dynamic
         if name == full_dynamic:

@@ -16,7 +16,7 @@ from . import appstates as aps
 
 
 class AlgoStatus:
-    
+
     def __init__(self):
         self.raw_data = None
         self.biimg = None
@@ -26,34 +26,39 @@ class AlgoStatus:
         self.algo = None
         self.final = None
 
+
 class AppStatus:
-    
+
     def __init__(self):
         self.biThresh = 0
         self.etThresh = 0
         self.method = 0
         self.shape = None
+        self.angleThresh = 0
+        self.thicknessThresh = 0
+        self.erosionThresh = 0
+        self.dynamicThresh = 0
+
 
 class SkeletonApp:
-    
     __current = None
     etThresh = 10
     hasSolution = False
     dynamicTreeList = []
     dynamicTreeAlphaList = []
-    
+
     def __init__(self):
         self.algoStatus = AlgoStatus()
         self.appStatus = AppStatus()
         self.stm = StateMachine()
         self.timer = TimeRecord()
         pass
-    
+
     def inst():
         if SkeletonApp.__current is None:
             SkeletonApp.__current = SkeletonApp()
         return SkeletonApp.__current
-    
+
     def run(self):
         self.timer.clear()
         self.timer.stamp("Start")
@@ -64,34 +69,52 @@ class SkeletonApp:
         self.stm.change_state(aps.ReadState())
 
         self.__runall()
-        self.hasSolution = True #TODO put this somewhere in the appstates
+        self.hasSolution = True  # TODO put this somewhere in the appstates
 
         self.timer.print_records()
-    
-    def reset_bithresh(self, newT : float):
+
+    def reset_anglethresh(self, newT: float):
+        self.appStatus.angleThresh = newT
+        self.stm.change_state(aps.ResponseState())  # TODO
+        self.__runall()
+
+    def reset_thicknessthresh(self, newT: float):
+        self.appStatus.thicknessThresh = newT
+        self.stm.change_state(aps.ResponseState())  # TODO
+        self.__runall()
+
+    def reset_Erosionthresh(self, newT: float):
+        self.appStatus.erosionThresh = newT
+        self.stm.change_state(aps.ResponseState())  # TODO
+        self.__runall()
+
+    def reset_dynamicthresh(self, newT: float):
+        self.appStatus.dynamicThresh = newT
+        self.stm.change_state(aps.ResponseState())  # TODO
+        self.__runall()
+
+    def reset_bithresh(self, newT: float):
         self.appStatus.biThresh = newT
         self.stm.change_state(aps.ThreshState())
         self.__runall()
-    
-    def reset_etthresh(self, newT : float):
+
+    def reset_etthresh(self, newT: float):
         self.appStatus.etThresh = newT
-        #self.stm.change_state(aps.ETPruneState())
+        # self.stm.change_state(aps.ETPruneState())
         self.stm.change_state(aps.PruneChoosingState())
         self.__runall()
-    
-    def reset_method(self, met : float):
+
+    def reset_method(self, met: float):
         self.appStatus.method = met
-        print("im here")
-    
+
     def reset_algo(self):
         self.algoStatus = AlgoStatus()
-
         print("successful reset")
 
         self.hasSolution = False
         self.dynamicTreeList = []
         self.dynamicTreeAlphaList = []
-        
+
     def __runall(self):
         while self.stm.valid():
             self.stm.execute()
@@ -100,47 +123,45 @@ class SkeletonApp:
 
 def run():
     # ta.test_boundary_edge([]);
-    
+
     tRec = TimeRecord()
-    
+
     tRec.stamp("Start")
     viewer = napari.current_viewer()
     layer = find_image_layer(viewer.layers)
     data = read_data(layer)
-    #show_data(data)
+    # show_data(data)
     tRec.stamp("Read Data")
-    
+
     size = getSize(data.shape)
-    
+
     biimage = graph.BinaryImage(data, 100)
     tRec.stamp("Threshold")
-    
-    
+
     g = graph.get_edge_vertices(biimage)
-    #print(g.points)
+    # print(g.points)
     tRec.stamp("Find Edge")
-    
+
     peConfig = get_vorgraph_config(size)
     peConfig.pointConfig.edge_color = "red"
-    display.Display.current().draw_layer(graph.Graph(g,[],[]), peConfig, display.boundary)
-    
+    display.Display.current().draw_layer(graph.Graph(g, [], []), peConfig, display.boundary)
+
     tRec.stamp("Draw Boundary")
-    
+
     vorGraph = graph.get_voronoi(g)
     tRec.stamp("Voronoi")
-      
-    
+
     display.Display.current().draw_layer(vorGraph.graph, peConfig, display.voronoi)
     tRec.stamp("Draw Voronoi")
-    
-    '''prunedGraph'''   
+
+    '''prunedGraph'''
     prunedGraph = graph.graph_in_image(vorGraph.graph, biimage)
     peConfig.pointConfig.name = "vor p pruned"
     peConfig.edgeConfig.name = "vor edge pruned"
     tRec.stamp("Prune Voronoi")
     display.Display.current().draw_layer(prunedGraph, peConfig, display.internalVoronoi)
     tRec.stamp("Draw Prune Voronoi")
-    
+
     '''closest site'''
     '''
     csiteGraph = graph.closest_site_graph(vorGraph)
@@ -150,50 +171,48 @@ def run():
     peConfig.edgeConfig.edge_color = "yellow"
     draw_graph(viewer, csiteGraph, peConfig)
     '''
-    closestDist = graph.get_closest_dists(prunedGraph.point_ids, vorGraph)  
+    closestDist = graph.get_closest_dists(prunedGraph.point_ids, vorGraph)
     tRec.stamp("Calc Heat Map")
-    
+
     colors = graph.get_color_list(closestDist)
     peConfig.pointConfig.edge_color = colors
-    peConfig.edgeConfig.edge_color = graph.get_edge_color_list(colors,prunedGraph.edgeIndex)
+    peConfig.edgeConfig.edge_color = graph.get_edge_color_list(colors, prunedGraph.edgeIndex)
     display.Display.current().draw_layer(prunedGraph, peConfig, display.heatmap)
-    
+
     tRec.stamp("Draw Heat Map")
-    
+
     algo = ETPruningAlgo(prunedGraph, closestDist)
     algo.burn()
-    
+
     tRec.stamp("Burn")
-    
-    
+
     bts = algo.npGraph.get_bts()
     colors = graph.get_color_list(bts)
     peConfig.pointConfig.edge_color = colors
-    peConfig.edgeConfig.edge_color = graph.get_edge_color_list(colors,prunedGraph.edgeIndex)
+    peConfig.edgeConfig.edge_color = graph.get_edge_color_list(colors, prunedGraph.edgeIndex)
     display.Display.current().draw_layer(prunedGraph, peConfig, display.burnTime)
     tRec.stamp("Draw Burn graph")
-       
-    finalGraph = algo.prune(getThresh()) 
+
+    finalGraph = algo.prune(getThresh())
     tRec.stamp("ET Prune")
-    
+
     ets = algo.npGraph.get_ets()
     colors = graph.get_color_list(ets)
     peConfig.pointConfig.edge_color = colors
     peConfig.edgeConfig.edge_color = graph.get_edge_color_list(colors, prunedGraph.edgeIndex)
-    display.Display.current().draw_layer(prunedGraph,peConfig,display.erosionT)
-    
+    display.Display.current().draw_layer(prunedGraph, peConfig, display.erosionT)
+
     peConfig.pointConfig.face_color = "red"
     peConfig.pointConfig.edge_color = "red"
     peConfig.edgeConfig.face_color = "red"
     peConfig.edgeConfig.edge_color = "red"
     display.Display.current().draw_layer(finalGraph, peConfig, display.final)
     tRec.stamp("Draw Final")
-    
+
     display.Display.current().reset()
-    
+
     tRec.print_records()
-    
-    
+
 
 # TODO
 # step 1 ：Find image layer
@@ -202,46 +221,136 @@ def run():
 
 def find_image_layer(layers):
     return layers[0]
-    
+
 
 def read_data(layer):
     return layer.data_raw
     # pass
 
+
 def show_data(data):
     napari.utils.notifications.show_info(str(type(data)));
     print(data)
-    
-def get_vorgraph_config(size : float) -> drawing.PointEdgeConfig:
+
+
+def get_vorgraph_config(size: float) -> drawing.PointEdgeConfig:
     pConfig = drawing.default_config()
     eConfig = drawing.default_config()
-    
-    #pConfig.name = "vor points"
-    pConfig.size = size
-    
-    #eConfig.name = "vor edges"
-    eConfig.size = size
-    
-    return drawing.PointEdgeConfig(pConfig, eConfig)
-
-def get_angular_centroid_config(size : float) -> drawing.PointEdgeConfig:
-    pConfig = drawing.angular_default_config()
-    eConfig = drawing.angular_default_config()
 
     # pConfig.name = "vor points"
-    pConfig.size = size*3
+    pConfig.size = size
 
     # eConfig.name = "vor edges"
     eConfig.size = size
 
     return drawing.PointEdgeConfig(pConfig, eConfig)
 
-def get_PCST_result_config(size : float) -> drawing.PointEdgeConfig:
+
+def get_thickness_config(size: float) -> drawing.PointEdgeConfig:
+    pConfig = drawing.default_config()
+    eConfig = drawing.default_config()
+
+    pConfig.size = size
+
+    eConfig.size = size
+
+    peConfig = drawing.PointEdgeConfig(pConfig, eConfig)
+
+    peConfig.pointConfig.face_color = "red"
+    peConfig.pointConfig.edge_color = "red"
+    peConfig.edgeConfig.face_color = "red"
+    peConfig.edgeConfig.edge_color = "red"
+
+    return peConfig
+
+def get_angle_config(size: float) -> drawing.PointEdgeConfig:
+    pConfig = drawing.default_config()
+    eConfig = drawing.default_config()
+
+    pConfig.size = size
+
+    eConfig.size = size
+
+    peConfig = drawing.PointEdgeConfig(pConfig, eConfig)
+
+    peConfig.pointConfig.face_color = "orange"
+    peConfig.pointConfig.edge_color = "orange"
+    peConfig.edgeConfig.face_color = "orange"
+    peConfig.edgeConfig.edge_color = "orange"
+
+    return peConfig
+
+def get_erosion_config(size: float) -> drawing.PointEdgeConfig:
+    pConfig = drawing.default_config()
+    eConfig = drawing.default_config()
+
+    pConfig.size = size
+
+    eConfig.size = size
+
+    peConfig = drawing.PointEdgeConfig(pConfig, eConfig)
+
+    peConfig.pointConfig.face_color = "blue"
+    peConfig.pointConfig.edge_color = "blue"
+    peConfig.edgeConfig.face_color = "blue"
+    peConfig.edgeConfig.edge_color = "blue"
+
+    return peConfig
+
+def get_dynamicGraph_config(size: float) -> drawing.PointEdgeConfig:
+    pConfig = drawing.default_config()
+    eConfig = drawing.default_config()
+
+    pConfig.size = size
+
+    eConfig.size = size
+
+    peConfig = drawing.PointEdgeConfig(pConfig, eConfig)
+
+    peConfig.pointConfig.face_color = "green"
+    peConfig.pointConfig.edge_color = "green"
+    peConfig.edgeConfig.face_color = "green"
+    peConfig.edgeConfig.edge_color = "green"
+
+    return peConfig
+
+def get_dynamic_config(size: float) -> drawing.PointEdgeConfig:
+    pConfig = drawing.default_config()
+    eConfig = drawing.default_config()
+
+    pConfig.size = size
+
+    eConfig.size = size
+
+    peConfig = drawing.PointEdgeConfig(pConfig, eConfig)
+
+    peConfig.pointConfig.face_color = "green"
+    peConfig.pointConfig.edge_color = "green"
+    peConfig.edgeConfig.face_color = "green"
+    peConfig.edgeConfig.edge_color = "green"
+
+    return peConfig
+
+
+def get_angular_centroid_config(size: float) -> drawing.PointEdgeConfig:
     pConfig = drawing.angular_default_config()
     eConfig = drawing.angular_default_config()
 
     # pConfig.name = "vor points"
-    pConfig.size = size*2
+    pConfig.size = size * 3
+
+    # eConfig.name = "vor edges"
+    eConfig.size = size
+
+    return drawing.PointEdgeConfig(pConfig, eConfig)
+
+
+def get_PCST_result_config(size: float) -> drawing.PointEdgeConfig:
+    pConfig = drawing.angular_default_config()
+    eConfig = drawing.angular_default_config()
+
+    # pConfig.name = "vor points"
+    pConfig.size = size * 2
     pConfig.edge_color = 'red'
     pConfig.face_color = 'red'
 
@@ -252,7 +361,8 @@ def get_PCST_result_config(size : float) -> drawing.PointEdgeConfig:
 
     return drawing.PointEdgeConfig(pConfig, eConfig)
 
-def get_skeleton_result_config(size : float) -> drawing.PointEdgeConfig:
+
+def get_skeleton_result_config(size: float) -> drawing.PointEdgeConfig:
     pConfig = drawing.angular_default_config()
     eConfig = drawing.angular_default_config()
 
@@ -262,13 +372,14 @@ def get_skeleton_result_config(size : float) -> drawing.PointEdgeConfig:
     pConfig.face_color = 'purple'
 
     # eConfig.name = "vor edges"
-    eConfig.size = size/2
+    eConfig.size = size / 2
     eConfig.edge_color = 'purple'
     eConfig.face_color = 'purple'
 
     return drawing.PointEdgeConfig(pConfig, eConfig)
 
-def get_dynamic_result_config(size : float) -> drawing.PointEdgeConfig:
+
+def get_dynamic_result_config(size: float) -> drawing.PointEdgeConfig:
     pConfig = drawing.angular_default_config()
     eConfig = drawing.angular_default_config()
 
@@ -282,26 +393,30 @@ def get_dynamic_result_config(size : float) -> drawing.PointEdgeConfig:
 
     return drawing.PointEdgeConfig(pConfig, eConfig)
 
-def get_angular_config(size : float) -> drawing.PointEdgeConfig:
+
+def get_angular_config(size: float) -> drawing.PointEdgeConfig:
     pConfig = drawing.angular_default_config()
     eConfig = drawing.angular_default_config()
 
     # pConfig.name = "vor points"
-    pConfig.size = size*3
+    pConfig.size = size * 3
 
     # eConfig.name = "vor edges"
     eConfig.size = size
 
     return drawing.PointEdgeConfig(pConfig, eConfig)
 
+
 def getSize(shape) -> float:
     refer = 128
     x, y, c = shape
-    m = float(max([x,y,c]))
+    m = float(max([x, y, c]))
     return m / refer
+
 
 def getThresh() -> float:
     return SkeletonApp.etThresh
+
 
 '''
 def draw_graph(viewer : napari.Viewer, g : graph.Graph, config : drawing.PointEdgeConfig) :
@@ -329,5 +444,4 @@ class MyWidget(magicgui.widgets.Widget):
 
     def __init__(self, viewer: "napari.viewer.Viewer", parent=None):
         super().__init__(parent)  
-'''    
-    
+'''

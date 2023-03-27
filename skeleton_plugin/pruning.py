@@ -471,6 +471,51 @@ class PruningAlgo:
         # virtual
         pass
 
+class NaiveAnglePruningAlgo(PruningAlgo):
+    def __init__(self, g: Graph, npg: NodePathGraph):
+        super().__init__(g, npg)
+
+    def prune(self, thresh: float) -> Graph:
+
+        point_list = []
+        edge_list = []
+
+        index = 0
+
+        for node in self.npGraph.nodes:
+            node.index = index
+            index += 1
+            point_list.append(node.point)
+
+        for path in self.npGraph.paths:
+            if path.theta > thresh:
+                edge_list.append([path.one.index, path.other.index])
+
+        return Graph(point_list,edge_list)
+
+class NaiveThicknessPruningAlgo(PruningAlgo):
+    def __init__(self, g: Graph, npg: NodePathGraph):
+        super().__init__(g, npg)
+
+    def prune(self, thresh: float) -> Graph:
+
+        point_list = []
+        edge_list = []
+
+        index = 0
+        max_thickness = 0
+
+        for node in self.npGraph.nodes:
+            node.index = index
+            index += 1
+            point_list.append(node.point)
+            max_thickness = max(max_thickness, node.radius)
+
+        for path in self.npGraph.paths:
+            if (path.one.radius + path.other.radius)/2 > thresh*max_thickness:
+                edge_list.append([path.one.index, path.other.index])
+
+        return Graph(point_list,edge_list)
 
 class ETPruningAlgo(PruningAlgo):
 

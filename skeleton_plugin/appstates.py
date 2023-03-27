@@ -10,11 +10,11 @@ from . import graph
 from . import statemachine as st
 from . import mainalgo as ma
 from . import display as ds
-from .pruning import BurningAlgo, ETPruningAlgo, AnglePruningAlgo
+from .pruning import BurningAlgo, ETPruningAlgo, AnglePruningAlgo, NaiveAnglePruningAlgo, NaiveThicknessPruningAlgo
 from . import tree
 from . import treealgorithm
 import numpy as np
-
+import copy
 
 def algo_st():
     return ma.SkeletonApp.inst().algoStatus
@@ -134,7 +134,95 @@ class BTState(st.State):
 class PruneChoosingState(st.State):
 
     def get_next(self):
-        return ETPruneState() if app_st().method == 0 else AngleState()
+
+        if app_st().method == 0:
+            return ETPruneState()
+        elif app_st().method == 1:
+            return AngleState()
+        else:
+            return ResponseState()
+
+class ResponseState(st.State):
+    def execute(self):
+        if algo_st().algo is None:
+            return
+        tRec().stamp("start of response state")
+
+        #naive thickness
+        thickness_graph = copy.deepcopy(algo_st().algo.graph)
+        thickness_npGraph = copy.deepcopy(algo_st().algo.npGraph)
+
+        thickness_algo = NaiveThicknessPruningAlgo(thickness_graph, thickness_npGraph)
+        thickness_threshold = app_st().thicknessThresh / 100.0
+
+        thickness_graph = thickness_algo.prune(thickness_threshold)
+        thicknessConfig = ma.get_thickness_config(get_size())
+        ds.Display.current().draw_layer(thickness_graph, thicknessConfig, ds.thickness)
+        tRec().stamp("Draw Naive Thickness")
+
+        #naive angle
+        angle_graph = copy.deepcopy(algo_st().algo.graph)
+        angle_npGraph = copy.deepcopy(algo_st().algo.npGraph)
+        angles = graph.get_angle(algo_st().graph.edge_ids, algo_st().vor)
+        angle_npGraph.set_angles(angles)
+
+        angle_algo = NaiveAnglePruningAlgo(angle_graph, angle_npGraph)
+        angle_threshold = np.pi * app_st().angleThresh / 100.0
+
+        angle_graph = angle_algo.prune(angle_threshold)
+
+        angleConfig = ma.get_angle_config(get_size())
+        ds.Display.current().draw_layer(angle_graph, angleConfig, ds.angle)
+        tRec().stamp("Draw Naive angle")
+
+        #ET
+        et_graph = copy.deepcopy(algo_st().algo.graph)
+        et_npGraph = copy.deepcopy(algo_st().algo.npGraph)
+
+        et_prune_algo = ETPruningAlgo(et_graph, et_npGraph)
+        et_threshold = app_st().erosionThresh / 100.0 *  max(et_npGraph.get_ets())
+        et_graph = et_prune_algo.prune(et_threshold)
+
+        erosionConfig = ma.get_erosion_config(get_size())
+
+        ds.Display.current().draw_layer(et_graph, erosionConfig, ds.erosionT)
+        tRec().stamp("Draw Erosion Thickness")
+
+        #dynamic
+
+        dynamic_graph = copy.deepcopy(algo_st().algo.graph)
+        dynamic_npGraph = copy.deepcopy(algo_st().algo.npGraph)
+
+        angles = graph.get_angle(algo_st().graph.edge_ids, algo_st().vor)
+        dynamic_npGraph.set_angles(angles)
+        dynamic_prune_algo = AnglePruningAlgo(dynamic_graph, dynamic_npGraph)
+
+        dynamic_threshold = app_st().dynamicThresh/ 100.0
+
+        if not ma.SkeletonApp.inst().hasSolution:
+            dynamic_tree, dynamic_tree_list, dynamic_reward_list, dynamic_alpha_list = dynamic_prune_algo.dynamic_prune(
+                dynamic_threshold)
+
+            ma.SkeletonApp.inst().dynamicTreeList = dynamic_tree_list
+            ma.SkeletonApp.inst().dynamicTreeAlphaList = dynamic_alpha_list
+            ma.SkeletonApp.inst().hasSolution = True
+
+        #find result dynamic tree based on alpha
+        dynamic_tree = ma.SkeletonApp.inst().dynamicTreeList[-1]
+        for i in range(1, len(ma.SkeletonApp.inst().dynamicTreeAlphaList)):
+            if ma.SkeletonApp.inst().dynamicTreeAlphaList[i] > dynamic_threshold:
+                dynamic_tree = ma.SkeletonApp.inst().dynamicTreeList[i - 1]
+                break
+
+        dynamic_graph = dynamic_tree.to_graph()
+
+        dynamicConfig = ma.get_dynamicGraph_config(get_size())
+
+        ds.Display.current().draw_layer(dynamic_graph, dynamicConfig, ds.dynamic)
+
+        tRec().stamp("Dynamic Thickness")
+
+        tRec().stamp("end response state")
 
 
 class AngleState(st.State):
@@ -142,9 +230,11 @@ class AngleState(st.State):
         if algo_st().algo is None:
             return
 
+
         angles = graph.get_angle(algo_st().graph.edge_ids, algo_st().vor)
         # print(angles)
         algo_st().algo.npGraph.set_angles(angles)
+
 
         tRec().stamp("calc angles")
 
@@ -161,7 +251,7 @@ class ETPruneState(st.State):
         # outputing skeleton graph as a txt file
         if ds.Display.current().config.flag_raise(ds.outputSkeleton):
             algo_st().algo.npGraph.to_skeleton_text_file()
-            print("I'm here")
+            print("Printing skeleton text file")
 
         prune_algo = ETPruningAlgo(algo_st().algo.graph, algo_st().algo.npGraph)
         pruneT = app_st().etThresh / 100.0 * max(app_st().shape)
@@ -273,7 +363,3 @@ class AnglePruneState(st.State):
         # tRec().stamp("draw_skeleton_result")
 
 
-class ResponseState(st.State):
-#TODO
-    def execute(self):
-        return

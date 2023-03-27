@@ -79,10 +79,9 @@ class MainWidget(QWidget):
         self.slider1 = s
         self.slider1_text = t
 
-        self.slider1.valueChanged.connect(self.set_thr) #TODO link to value in mainalgo
-        self.slider1.sliderReleased.connect(self.set_thr_lift) #TODO need to change this (don't want it update real time)
+        self.slider1.valueChanged.connect(self.set_slider1_thr) #TODO link to value in mainalgo
+        self.slider1.sliderReleased.connect(self.set_slider1_lift) #TODO need to change this (don't want it update real time)
         self.slider1.move(0, 200)
-        self.slider1_text.setText("Thickness: " + str(self.slider1.value()) + "%")
         self.slider1_text.move(0, 220)
 
         # slider for naive angle
@@ -90,10 +89,9 @@ class MainWidget(QWidget):
         self.slider2 = s
         self.slider2_text = t
 
-        self.slider2.valueChanged.connect(self.set_thr)  # TODO link to value in mainalgo
-        self.slider2.sliderReleased.connect(self.set_thr_lift)  # TODO need to change this (don't want it update real time)
+        self.slider2.valueChanged.connect(self.set_slider2_thr)
+        self.slider2.sliderReleased.connect(self.set_slider2_lift)
         self.slider2.move(0, 260)
-        self.slider2_text.setText("Angle: " + str(self.slider2.value()) + "%")
         self.slider2_text.move(0, 280)
 
         # slider for ET
@@ -101,10 +99,9 @@ class MainWidget(QWidget):
         self.slider3 = s
         self.slider3_text = t
 
-        self.slider3.valueChanged.connect(self.set_thr)  # TODO link to value in mainalgo
-        self.slider3.sliderReleased.connect(self.set_thr_lift)  # TODO need to change this (don't want it update real time)
+        self.slider3.valueChanged.connect(self.set_slider3_thr)
+        self.slider3.sliderReleased.connect(self.set_slider3_lift)
         self.slider3.move(0, 320)
-        self.slider3_text.setText("Erosion : " + str(self.slider3.value()) + "%")
         self.slider3_text.move(0, 340)
 
         # slider for dynamic angle method
@@ -112,10 +109,9 @@ class MainWidget(QWidget):
         self.slider4 = s
         self.slider4_text = t
 
-        self.slider4.valueChanged.connect(self.set_thr)  # TODO link to value in mainalgo
-        self.slider4.sliderReleased.connect(self.set_thr_lift)  # TODO need to change this (don't want it update real time)
+        self.slider4.valueChanged.connect(self.set_slider4_thr)
+        self.slider4.sliderReleased.connect(self.set_slider4_lift)
         self.slider4.move(0, 380)
-        self.slider4_text.setText("Dynamic angle : " + str(self.slider4.value()) + "%")
         self.slider4_text.move(0, 400)
 
         self.fullModeBox = QCheckBox(self)
@@ -129,16 +125,28 @@ class MainWidget(QWidget):
         
         self.set_bi_thr()
         self.set_thr()
-        
+        self.set_slider1_thr()
+        self.set_slider2_thr()
+        self.set_slider3_thr()
+        self.set_slider4_thr()
+
         WidgetManager.inst().add(self)
     
     def sync(self):
         c = self.modeBox.isChecked()
-        mainalgo.SkeletonApp.inst().reset_method(1 if c else 0)
-    
+        d = self.fullModeBox.isChecked()
+
+        if d:
+            mainalgo.SkeletonApp.inst().reset_method(2)
+        elif c:
+            mainalgo.SkeletonApp.inst().reset_method(1)
+        else:
+            mainalgo.SkeletonApp.inst().reset_method(0)
+
     def run():
         WidgetManager.inst().start()
         mainalgo.SkeletonApp.inst().run()
+
     def set_bi_thr(self):
         self.thSText.setText("thr : " + str(self.thSlider.value()) + "%")
     
@@ -150,8 +158,30 @@ class MainWidget(QWidget):
     
     def set_thr_lift(self):
         mainalgo.SkeletonApp.inst().reset_etthresh(self.etSlider.value())
-    
-    
+
+    def set_slider1_lift(self):
+        mainalgo.SkeletonApp.inst().reset_thicknessthresh(self.slider1.value())
+    def set_slider2_lift(self):
+        mainalgo.SkeletonApp.inst().reset_anglethresh(self.slider2.value())
+
+    def set_slider3_lift(self):
+        mainalgo.SkeletonApp.inst().reset_Erosionthresh(self.slider3.value())
+
+    def set_slider4_lift(self):
+        mainalgo.SkeletonApp.inst().reset_dynamicthresh(self.slider4.value())
+
+    def set_slider1_thr(self):
+        self.slider1_text.setText("Thickness: " + str(self.slider1.value()) + "%")
+
+    def set_slider2_thr(self):
+        self.slider2_text.setText("Angle: " + str(self.slider2.value()) + "%")
+
+    def set_slider3_thr(self):
+        self.slider3_text.setText("Erosion : " + str(self.slider3.value()) + "%")
+
+    def set_slider4_thr(self):
+        self.slider4_text.setText("Dynamic angle : " + str(self.slider4.value()) + "%")
+
     def reset():
         mainalgo.SkeletonApp.inst().reset_algo()
         Display.current().removeall()
@@ -173,8 +203,8 @@ class DebugWidget(QWidget):
         super().__init__(parent)
         
         self.name = debug_widget
-        
-        
+
+
         self.show_edge_box = self.__make_box("show boundary", 0)       
         self.show_vor_box = self.__make_box("show full voronoi", 40)        
         self.show_intvor_box = self.__make_box("show internal voronoi", 80)        
@@ -183,12 +213,13 @@ class DebugWidget(QWidget):
         self.show_et_box = self.__make_box("show et", 200)
         self.show_final_box = self.__make_box("show final", 240)
         self.show_angle_box = self.__make_box("show angle", 280)
-        self.show_PCST_box = self.__make_box("show PCST", 320)
-        self.show_PCST_result_box = self.__make_box("show PCST result", 360)
-        self.show_skeleton_result_box = self.__make_box("show skeleton result", 400)
-        self.show_dynamic_box = self.__make_box("show dynamic", 440)
-        self.show_full_dynamic_box = self.__make_box("show full dynamic", 480)
-        self.output_skeleton = self.__make_box("output skeleton graph", 520)
+        self.show_thickness_box = self.__make_box("show thickness", 320)
+        self.show_PCST_box = self.__make_box("show PCST", 360)
+        self.show_PCST_result_box = self.__make_box("show PCST result", 400)
+        self.show_skeleton_result_box = self.__make_box("show skeleton result", 440)
+        self.show_dynamic_box = self.__make_box("show dynamic", 480)
+        self.show_full_dynamic_box = self.__make_box("show full dynamic", 520)
+        self.output_skeleton = self.__make_box("output skeleton graph", 560)
 
         WidgetManager.inst().add(self)
     
@@ -202,6 +233,7 @@ class DebugWidget(QWidget):
         config.show_et = self.show_et_box.isChecked()
         config.show_final = self.show_final_box.isChecked()
         config.show_angle = self.show_angle_box.isChecked()
+        config.show_thickness = self.show_thickness_box.isChecked()
         config.show_pcst = self.show_PCST_box.isChecked()
         config.show_pcst_result = self.show_PCST_result_box.isChecked()
         config.show_skeleton_result = self.show_skeleton_result_box.isChecked()

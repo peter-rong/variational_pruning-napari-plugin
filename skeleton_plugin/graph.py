@@ -216,6 +216,11 @@ def get_voronoi(points: list) -> VoronoiDiagram:
     return VoronoiDiagram(points)
 
 
+def prune_graph_from_edge(graph: Graph, flags: list) -> Graph:
+    points = graph.points
+
+
+
 def prune_graph(graph: Graph, flags: list) -> Graph:
     new_points = list()
     new_ids = list()
