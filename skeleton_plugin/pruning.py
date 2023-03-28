@@ -182,8 +182,58 @@ class NodePathGraph:
                 dynamicTree.add_node(new_node)
                 path_to_node[path] = new_node
 
+        #updated
         for node in self.nodes:
 
+            non_core_path = []
+            core_count = 0
+            for path in node.paths:
+                if not path.isCore:
+                    non_core_path.append(path)
+                else:
+                    core_count += 1
+
+            if core_count != 0 and len(non_core_path) < 1:
+                continue
+
+            elif core_count != 0 and len(non_core_path) == 1:
+                path = non_core_path[0]
+                new_edge = DynamicTreeEdge(path_to_node[path], core_node)
+                dynamicTree.add_edge(new_edge)
+
+            elif core_count != 0 and len(non_core_path) > 1:
+                junction_node = DynamicTreeNode(node.point, 0, 0)
+                junction_node.path_ids = [-2, -2]
+                dynamicTree.add_node(junction_node)
+
+                new_edge = DynamicTreeEdge(junction_node, core_node)
+                dynamicTree.add_edge(new_edge)
+
+                for path in non_core_path:
+                    new_edge = DynamicTreeEdge(path_to_node[path], junction_node)
+                    dynamicTree.add_edge(new_edge)
+
+            elif core_count == 0 and len(non_core_path) <= 1:
+                continue
+
+            elif core_count == 0 and len(non_core_path) == 2:
+                path1, path2 = non_core_path[0], non_core_path[1]
+                new_edge = DynamicTreeEdge(path_to_node[path1], path_to_node[path2])
+                dynamicTree.add_edge(new_edge)
+
+            elif core_count == 0 and len(non_core_path) > 2:
+                junction_node = DynamicTreeNode(node.point, 0, 0)
+                junction_node.path_ids = [-2, -2]
+
+                dynamicTree.add_node(junction_node)
+
+                for path in non_core_path:
+                    new_edge = DynamicTreeEdge(junction_node, path_to_node[path])
+                    dynamicTree.add_edge(new_edge)
+            else:
+                print("impossible")
+
+            '''
             if len(node.paths) == 0:
                 print("Impossible")
             elif len(node.paths) == 1:
@@ -212,7 +262,7 @@ class NodePathGraph:
                     else:
                         new_edge = DynamicTreeEdge(junction_node, path_to_node[path])
                         dynamicTree.add_edge(new_edge)
-
+            '''
         return dynamicTree
     def to_dynamic_tree(self) -> DynamicTree:
 
