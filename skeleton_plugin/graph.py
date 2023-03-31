@@ -78,6 +78,10 @@ class Graph:
         self.point_include = [True] * len(point_list)
         self.edgeIndex_include = [True] * len(edge)
 
+    def duplicate(self):
+        new_graph = Graph(self.points,self.edgeIndex)
+        return new_graph
+
     def get_cord_as_tuples(self):
         edges = list()
         for e in self.edgeIndex:
@@ -216,9 +220,18 @@ def get_voronoi(points: list) -> VoronoiDiagram:
     return VoronoiDiagram(points)
 
 
-def prune_graph_from_edge(graph: Graph, flags: list) -> Graph:
-    points = graph.points
+def prune_graph_from_edge(graph: Graph, threshold_list, dynamic_threshold) -> Graph:
 
+    new_points = graph.points
+    new_edges = list()
+
+    index = len(threshold_list) -1
+
+    for i in range(len(threshold_list)):
+        if threshold_list[i] > dynamic_threshold:
+            new_edges.append(graph.edgeIndex[i])
+
+    return Graph(new_points, new_edges)
 
 
 def prune_graph(graph: Graph, flags: list) -> Graph:

@@ -44,8 +44,8 @@ class SkeletonApp:
     __current = None
     etThresh = 10
     hasSolution = False
-    dynamicTreeList = []
-    dynamicTreeAlphaList = []
+    dynamic_graph = None
+    threshold_list = None
 
     def __init__(self):
         self.algoStatus = AlgoStatus()
@@ -112,8 +112,8 @@ class SkeletonApp:
         print("successful reset")
 
         self.hasSolution = False
-        self.dynamicTreeList = []
-        self.dynamicTreeAlphaList = []
+        self.dynamic_graph = None
+        self.threshold_list = None
 
     def __runall(self):
         while self.stm.valid():

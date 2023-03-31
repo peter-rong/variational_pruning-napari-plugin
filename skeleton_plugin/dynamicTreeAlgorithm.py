@@ -7,9 +7,8 @@ import time
 class Algorithm:
 
     def __init__(self, current_tree: dynamicTree.DynamicTree):
-        self.tree = current_tree
+        self.tree = current_tree.duplicate()
         self.alpha_list = [0]
-        self.tree_list = [copy.deepcopy(self.tree)]
 
     def print_edges(self, input_tree):
         for e in input_tree.edges:
@@ -22,15 +21,9 @@ class Algorithm:
             print("Edge cost between " + str(e.other.point) + " and "
                   + str(e.one.point) + " is " + str(e.other_to_one_cost))
 
-    def print_result(self):
-        for i in range(len(self.alpha_list)):
-            print("alpha = " + str(self.alpha_list[i]) +
-                  " and tree has " + str(len(self.tree_list[i].nodes)) + " nodes"
-                  +" and has "+ str(len(self.tree_list[i].edges)) + " edges")
-
     def execute(self, input_tree):
 
-        #print(len(input_tree.get_leaves()))
+        # print(len(input_tree.get_leaves()))
         start = time.time()
         total_score, total_cost = 0, 0
 
@@ -42,10 +35,10 @@ class Algorithm:
             total_cost += node.cost
 
         for edge in input_tree.edges:
-            edge.one_to_other_score = 0
-            edge.one_to_other_cost = 0
-            edge.other_to_one_score = 0
-            edge.other_to_one_cost = 0
+            edge.one_to_other_score = None
+            edge.one_to_other_cost = None
+            edge.other_to_one_score = None
+            edge.other_to_one_cost = None
 
         leaves = input_tree.get_leaves()
 
@@ -95,11 +88,14 @@ class Algorithm:
 
         for edge in input_tree.edges:
 
-            if edge.one_to_other_score == 0:
+            if edge.one_to_other_score == None and edge.other_to_one_score == None:
+                print("Not Possible")
+
+            elif edge.one_to_other_score == None:
                 edge.one_to_other_score = total_score - edge.other_to_one_score
                 edge.one_to_other_cost = total_cost - edge.other_to_one_cost
 
-            if edge.other_to_one_score == 0:
+            elif edge.other_to_one_score == None:
                 edge.other_to_one_score = total_score - edge.one_to_other_score
                 edge.other_to_one_cost = total_cost - edge.one_to_other_cost
 
@@ -112,9 +108,8 @@ class Algorithm:
                 min_alpha = edge.other_to_one_score / edge.other_to_one_cost
                 min_edge = edge
 
-        self.alpha_list.append(min_alpha+self.alpha_list[-1])
+        self.alpha_list.append(min_alpha + self.alpha_list[-1])
         new_tree = self.shrink_tree(input_tree, min_alpha, min_edge)
-        self.tree_list.append(copy.deepcopy(new_tree))
 
         iter_counter = 1
         while len(new_tree.edges) > 1:
@@ -136,18 +131,18 @@ class Algorithm:
             if min_edge is None:
                 print("break")
                 break
-            self.alpha_list.append(min_alpha+self.alpha_list[-1])
+            self.alpha_list.append(min_alpha + self.alpha_list[-1])
             new_tree = self.shrink_tree(new_tree, min_alpha, min_edge)
-            self.tree_list.append(copy.deepcopy(new_tree))
-
-        self.print_result()
 
         end = time.time()
-        print("Took " +str(iter_counter)+ " iterations")
+        print("Took " + str(iter_counter) + " iterations")
         print("Time spent: " + str(end - start))
 
-        return self.alpha_list, self.tree_list
+        for node in self.tree.nodes:
+            if not node.drop_index:
+                node.drop_index = len(self.alpha_list)+1
 
+        return self.alpha_list
 
     # shrink the tree after increasing alpha
     def shrink_tree(self, input_tree, alpha, min_edge):
@@ -155,6 +150,8 @@ class Algorithm:
         tree = input_tree
         queue = deque()
         min_edge_cost = 0
+        total_alpha = self.alpha_list[-1]
+        curr_alpha_index = len(self.alpha_list)
 
         safe_node = None
         if alpha == (min_edge.one_to_other_score / min_edge.one_to_other_cost):
@@ -186,6 +183,8 @@ class Algorithm:
             curr_node.edges = []
             tree.nodes.remove(curr_node)
 
+            self.tree.nodes[curr_node.index].drop_threshold = total_alpha
+            self.tree.nodes[curr_node.index].drop_index = curr_alpha_index
 
         for edge in tree.edges:
             edge.one_to_other_score -= alpha * edge.one_to_other_cost
@@ -204,12 +203,10 @@ class Algorithm:
             if curr_node == curr_edge.one:
                 curr_edge.one_to_other_cost -= min_edge_cost
                 if curr_edge.one_to_other_cost < 0:
-                    print("float-point error " + str(curr_edge.one_to_other_cost))
-                    curr_edge.one_to_other_cost = 0 #amendament from value lost in float point calculation
+                    curr_edge.one_to_other_cost = 0  # amendament from value lost in float point calculation
             elif curr_node == curr_edge.other:
                 curr_edge.other_to_one_cost -= min_edge_cost
                 if curr_edge.other_to_one_cost < 0:
-                    print("float-point error "+ str(curr_edge.other_to_one_cost))
                     curr_edge.other_to_one_cost = 0  # amendament from value lost in float point calculation
             else:
                 print("so wrong")

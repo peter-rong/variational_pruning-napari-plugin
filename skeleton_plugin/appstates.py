@@ -149,8 +149,8 @@ class ResponseState(st.State):
         tRec().stamp("start of response state")
 
         #naive thickness
-        thickness_graph = copy.deepcopy(algo_st().algo.graph)
-        thickness_npGraph = copy.deepcopy(algo_st().algo.npGraph)
+        thickness_graph = algo_st().algo.graph.duplicate()
+        thickness_npGraph = algo_st().algo.npGraph.duplicate()
 
         thickness_algo = NaiveThicknessPruningAlgo(thickness_graph, thickness_npGraph)
         thickness_threshold = app_st().thicknessThresh / 100.0
@@ -161,8 +161,8 @@ class ResponseState(st.State):
         tRec().stamp("Draw Naive Thickness")
 
         #naive angle
-        angle_graph = copy.deepcopy(algo_st().algo.graph)
-        angle_npGraph = copy.deepcopy(algo_st().algo.npGraph)
+        angle_graph = algo_st().algo.graph.duplicate()
+        angle_npGraph = algo_st().algo.npGraph.duplicate()
         angles = graph.get_angle(algo_st().graph.edge_ids, algo_st().vor)
         angle_npGraph.set_angles(angles)
 
@@ -176,8 +176,8 @@ class ResponseState(st.State):
         tRec().stamp("Draw Naive angle")
 
         #ET
-        et_graph = copy.deepcopy(algo_st().algo.graph)
-        et_npGraph = copy.deepcopy(algo_st().algo.npGraph)
+        et_graph = algo_st().algo.graph.duplicate()
+        et_npGraph = algo_st().algo.npGraph.duplicate()
 
         et_prune_algo = ETPruningAlgo(et_graph, et_npGraph)
         et_threshold = app_st().erosionThresh / 100.0 *  max(et_npGraph.get_ets())
@@ -190,8 +190,8 @@ class ResponseState(st.State):
 
         #dynamic
 
-        dynamic_graph = copy.deepcopy(algo_st().algo.graph)
-        dynamic_npGraph = copy.deepcopy(algo_st().algo.npGraph)
+        dynamic_graph = algo_st().algo.graph.duplicate()
+        dynamic_npGraph = algo_st().algo.npGraph.duplicate()
 
         angles = graph.get_angle(algo_st().graph.edge_ids, algo_st().vor)
         dynamic_npGraph.set_angles(angles)
@@ -200,27 +200,26 @@ class ResponseState(st.State):
         dynamic_threshold = app_st().dynamicThresh/ 100.0
 
         if not ma.SkeletonApp.inst().hasSolution:
-            dynamic_tree, dynamic_tree_list, dynamic_reward_list, dynamic_alpha_list = dynamic_prune_algo.dynamic_prune(
+            dynamic_tree, dynamic_reward_list, dynamic_alpha_list = dynamic_prune_algo.dynamic_prune(
                 dynamic_threshold)
 
-            ma.SkeletonApp.inst().dynamicTreeList = dynamic_tree_list
-            ma.SkeletonApp.inst().dynamicTreeAlphaList = dynamic_alpha_list
+            dynamic_graph_with_threshold, dynamic_graph_thresh, dynamic_color_list_with_threshold = dynamic_prune_algo.dynamic_to_graph_with_color()
+
+            ma.SkeletonApp.inst().dynamic_graph = dynamic_graph_with_threshold
+            ma.SkeletonApp.inst().threshold_list = dynamic_graph_thresh
+
             ma.SkeletonApp.inst().hasSolution = True
 
-        #find result dynamic tree based on alpha
-        dynamic_tree = ma.SkeletonApp.inst().dynamicTreeList[-1]
-        for i in range(1, len(ma.SkeletonApp.inst().dynamicTreeAlphaList)):
-            if ma.SkeletonApp.inst().dynamicTreeAlphaList[i] > dynamic_threshold:
-                dynamic_tree = ma.SkeletonApp.inst().dynamicTreeList[i - 1]
-                break
+        dynamic_graph = ma.SkeletonApp.inst().dynamic_graph
+        threshold_list = ma.SkeletonApp.inst().threshold_list
 
-        dynamic_graph = dynamic_tree.to_graph()
+        dynamic_result_graph = graph.prune_graph_from_edge(dynamic_graph, threshold_list, dynamic_threshold)
 
         dynamicConfig = ma.get_dynamicGraph_config(get_size())
 
-        ds.Display.current().draw_layer(dynamic_graph, dynamicConfig, ds.dynamic)
+        ds.Display.current().draw_layer(dynamic_result_graph, dynamicConfig, ds.dynamic)
 
-        tRec().stamp("Dynamic Thickness")
+        tRec().stamp("Dynamic Angle")
 
         tRec().stamp("end response state")
 
@@ -286,34 +285,24 @@ class AnglePruneState(st.State):
         centroid_graph, centroid_points_color, reward_list, cost_list, original_graph = prune_algo.prune(pruneT)
         tRec().stamp("compute angle function and cluster")
 
-        dynamic_tree, dynamic_tree_list, dynamic_reward_list, dynamic_alpha_list = prune_algo.dynamic_prune(
+        dynamic_tree, dynamic_reward_list, dynamic_alpha_list = prune_algo.dynamic_prune(
             raw_threshold)
+
         dynamic_graph = dynamic_tree.to_graph()
 
-        '''
-        dynamic_full_graph, dynamic_color_list = dynamic_tree.to_colored_graph(dynamic_tree_list)
-        dynamic_color_list = graph.get_color_list(dynamic_color_list)
-        
-        
         dynamicConfig = ma.get_dynamic_result_config(get_size())
-        dynamicFullConfig = ma.get_dynamic_result_config(get_size())
 
-        dynamicFullConfig.edgeConfig.edge_color = dynamic_color_list
-
+        dynamic_graph_with_threshold, dynamic_graph_thresh, dynamic_color_list_with_threshold = prune_algo.dynamic_to_graph_with_color()
         tRec().stamp("compute dynamic tree list")
 
-        ds.Display.current().draw_layer(dynamic_graph, dynamicConfig, ds.dynamic)
+        dynamicConfig.edgeConfig.face_color = dynamic_color_list_with_threshold # testing
+        dynamicConfig.edgeConfig.edge_color = dynamic_color_list_with_threshold
 
-        
-        dynamicConfig.pointConfig.face_color = graph.get_color_list(dynamic_reward_list)  # testing
-        dynamicConfig.pointConfig.edge_color = graph.get_color_list(dynamic_reward_list)  # testing
-        ds.Display.current().draw_layer(dynamic_full_graph, dynamicConfig, ds.dynamic)  # testing
-        
+        ds.Display.current().draw_layer(dynamic_graph_with_threshold, dynamicConfig, ds.dynamic)
+
         tRec().stamp("draw dynamic graph")
 
-        ds.Display.current().draw_layer(dynamic_full_graph, dynamicFullConfig, ds.full_dynamic)
         tRec().stamp("draw full dynamic graph")
-        '''
 
         peConfig = ma.get_angular_config(get_size())
         centroid_peConfig = ma.get_angular_centroid_config(get_size())

@@ -1,6 +1,6 @@
 import sys
 from . import graph
-
+import math
 
 class DynamicTreeNode:
 
@@ -15,6 +15,11 @@ class DynamicTreeNode:
         self.score = r  # temporary score
         self.total_cost = c  # temporary cost
         self.edges = list()
+
+        self.index = -1
+
+        self.drop_threshold = math.inf
+        self.drop_index = None
 
     def add_edge(self, edge):
         self.edges.append(edge)
@@ -36,7 +41,7 @@ class DynamicTreeNode:
             if self.get_other_node(e) == otherNode:
                 return e
 
-        print('Edge not fount, error')
+        print('Edge not found, error')
         return None
 
     def set_score(self):
@@ -57,10 +62,10 @@ class DynamicTreeEdge:
     def __init__(self, one: DynamicTreeNode, other: DynamicTreeNode):
         self.one = one
         self.other = other
-        self.one_to_other_score = 0
-        self.one_to_other_cost = 0
-        self.other_to_one_score = 0
-        self.other_to_one_cost = 0
+        self.one_to_other_score = None
+        self.one_to_other_cost = None
+        self.other_to_one_score = None
+        self.other_to_one_cost = None
 
     def set_score(self, first_node, score):
 
@@ -90,7 +95,10 @@ class DynamicTree:
 
         # index doesn't change
         for i in range(len(points)):
-            self.nodes.append(DynamicTreeNode(points[i], reward_list[i], reward_list[i] == sys.maxsize))
+            newNode = DynamicTreeNode(points[i], reward_list[i], cost_list[i])
+            newNode.index = len(self.nodes)
+
+            self.nodes.append(newNode)
 
         for i in range(len(edgeIndex)):
             firstIndex = edgeIndex[i][0]
@@ -99,6 +107,21 @@ class DynamicTree:
             self.nodes[firstIndex].add_edge(edge)
             self.nodes[secondIndex].add_edge(edge)
             self.edges.append(edge)
+
+    def duplicate(self):
+
+        newTree = DynamicTree([],[],[],[])
+
+        for node in self.nodes:
+            newNode = DynamicTreeNode(node.point, node.reward, node.cost)
+            newTree.add_node(newNode)
+
+        for edge in self.edges:
+            newEdge = DynamicTreeEdge(newTree.nodes[edge.one.index], newTree.nodes[edge.other.index])
+            newTree.add_edge(newEdge)
+
+        return newTree
+
 
     def to_colored_graph(self, tree_list: list):
 
@@ -148,6 +171,7 @@ class DynamicTree:
         return leaves_list
 
     def add_node(self, node: DynamicTreeNode):
+        node.index = len(self.nodes)
         self.nodes.append(node)
 
     def add_edge(self, edge: DynamicTreeEdge):

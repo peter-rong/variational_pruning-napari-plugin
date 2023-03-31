@@ -17,6 +17,9 @@ from typing import Union
 import numpy as np
 import matplotlib.pyplot as plt
 import networkx as nx
+from matplotlib import cm
+from matplotlib import colors as cl
+
 
 class Node:
 
@@ -136,10 +139,14 @@ class Path:
         self.clusterPointIndex = None
         self.clusterEdgeIndex = None
         self.inSol = True
+        self.TreeNodeIndex = None
+        self.drop_threshold = None
+
     def mid_point(self):
-        x = (self.one.point[0] + self.other.point[0])/2
-        y = (self.one.point[1] + self.other.point[1])/2
-        return [x,y]
+        x = (self.one.point[0] + self.other.point[0]) / 2
+        y = (self.one.point[1] + self.other.point[1]) / 2
+        return [x, y]
+
 
 class NodePathGraph:
 
@@ -162,6 +169,7 @@ class NodePathGraph:
             if path.isCore:
                 path.one.isCore = True
                 path.other.isCore = True
+                path.TreeNodeIndex = 0
 
         for node in self.nodes:
             if node.isCore:
@@ -178,11 +186,13 @@ class NodePathGraph:
 
         for path in self.paths:
             if not path.isCore:
-                new_node = DynamicTreeNode(path.mid_point(), (math.sin(path.theta/2)*path.length),path.length)
+                new_node = DynamicTreeNode(path.mid_point(), (math.sin(path.theta / 2) * path.length), path.length)
                 dynamicTree.add_node(new_node)
+
+                path.TreeNodeIndex = new_node.index
                 path_to_node[path] = new_node
 
-        #updated
+        # updated
         for node in self.nodes:
 
             non_core_path = []
@@ -203,7 +213,6 @@ class NodePathGraph:
 
             elif core_count != 0 and len(non_core_path) > 1:
                 junction_node = DynamicTreeNode(node.point, 0, 0)
-                junction_node.path_ids = [-2, -2]
                 dynamicTree.add_node(junction_node)
 
                 new_edge = DynamicTreeEdge(junction_node, core_node)
@@ -233,37 +242,9 @@ class NodePathGraph:
             else:
                 print("impossible")
 
-            '''
-            if len(node.paths) == 0:
-                print("Impossible")
-            elif len(node.paths) == 1:
-                continue
-            elif len(node.paths) == 2:
-                path1, path2 = list(node.paths)[0], list(node.paths)[1]
-                if path1.isCore and path2.isCore:
-                    continue
-                elif path1.isCore:
-                    new_edge = DynamicTreeEdge(path_to_node[path2], core_node)
-                    dynamicTree.add_edge(new_edge)
-                elif path2.isCore:
-                    new_edge = DynamicTreeEdge(path_to_node[path1], core_node)
-                    dynamicTree.add_edge(new_edge)
-                else:
-                    new_edge = DynamicTreeEdge(path_to_node[path1], path_to_node[path2])
-                    dynamicTree.add_edge(new_edge)
-            else:
-                #need to create junction node
-                junction_node = DynamicTreeNode(node.point,0,0)
-                dynamicTree.add_node(junction_node)
-                for path in node.paths:
-                    if path.isCore:
-                        new_edge = DynamicTreeEdge(junction_node, core_node)
-                        dynamicTree.add_edge(new_edge)
-                    else:
-                        new_edge = DynamicTreeEdge(junction_node, path_to_node[path])
-                        dynamicTree.add_edge(new_edge)
-            '''
+
         return dynamicTree
+
     def to_dynamic_tree(self) -> DynamicTree:
 
         # TODO check conversion
@@ -280,7 +261,7 @@ class NodePathGraph:
 
         hasCore = False
         for path in self.paths:
-            total_reward += (math.sin(path.theta/2) * path.length)
+            total_reward += (math.sin(path.theta / 2) * path.length)
             min_cost = min(min_cost, path.length / 2)
             if path.isCore:
                 path.one.isCore = True
@@ -296,9 +277,8 @@ class NodePathGraph:
                 node_reward = 0
                 node_cost = 0
                 for path in node.paths:
-
-                    node_reward += (math.sin(path.theta/2) * path.length/2)
-                    node_cost += path.length/2
+                    node_reward += (math.sin(path.theta / 2) * path.length / 2)
+                    node_cost += path.length / 2
 
                 new_node = DynamicTreeNode(node.point, node_reward, node_cost)
                 dynamicTree.add_node(new_node)
@@ -345,6 +325,14 @@ class NodePathGraph:
             node2.add_path(path)
             self.paths.append(path)
 
+    def duplicate(self):
+        newNPGraph = NodePathGraph([],[],[],None)
+        newNPGraph.nodes = self.nodes
+        newNPGraph.paths = self.paths
+        newNPGraph.max = self.max
+
+        return newNPGraph
+
     def to_graph(self):
 
         point_list = []
@@ -365,8 +353,13 @@ class NodePathGraph:
         return Graph(point_list, edge_list), thickness_list
 
     def to_graph_angle(self):
+
+        print("-----")
+        print("There are " + str(len(self.nodes)) + " nodes")
+
+        print("There are " + str(len(self.paths)) + " paths")
         point_list = []
-        reward_list = []
+        angle_list = []
         edge_list = []
 
         index = 0
@@ -376,12 +369,31 @@ class NodePathGraph:
             index += 1
             point_list.append(node.point)
 
-
         for path in self.paths:
             edge_list.append([path.one.index, path.other.index])
-            reward_list.append(math.sin(path.theta/2))
+            angle_list.append(path.theta)
 
-        return Graph(point_list, edge_list), reward_list
+        return Graph(point_list, edge_list), angle_list
+
+    def to_angle_text_file(self):
+        graph, angle_list = self.to_graph_angle()
+        resulting_text = ''
+        node_count, edge_count = len(self.nodes), len(self.paths)
+        resulting_text += str(node_count) + '\n'
+
+        for i in range(len(graph.points)):
+            resulting_text += str(graph.points[i][0]) + ' ' + str(graph.points[i][1]) + '\n'
+
+        resulting_text += str(edge_count) + '\n'
+
+        for j in range(len(graph.edgeIndex)):
+            edge = graph.edgeIndex[j]
+            resulting_text += str(edge[0]) + ' ' + str(edge[1]) + ' ' + str(angle_list[j]) + '\n'
+
+        f = open("angle_result.txt", "w")
+        f.write(resulting_text)
+
+        f.close()
 
     def to_skeleton_text_file(self):
 
@@ -397,12 +409,10 @@ class NodePathGraph:
         for edge in graph.edgeIndex:
             resulting_text += 'E (' + str(edge[0]) + ',' + str(edge[1]) + ')' + '\n'
 
-        f = open("skeleton_graph.txt", "w+")
-        f.truncate(0)
+        f = open("skeleton_graph.txt", "w")
         f.write(resulting_text)
 
         f.close()
-
 
     def get_negative_degree_one_path(self) -> list():
         ans = list()
@@ -521,6 +531,7 @@ class PruningAlgo:
         # virtual
         pass
 
+
 class NaiveAnglePruningAlgo(PruningAlgo):
     def __init__(self, g: Graph, npg: NodePathGraph):
         super().__init__(g, npg)
@@ -541,7 +552,8 @@ class NaiveAnglePruningAlgo(PruningAlgo):
             if path.theta > thresh:
                 edge_list.append([path.one.index, path.other.index])
 
-        return Graph(point_list,edge_list)
+        return Graph(point_list, edge_list)
+
 
 class NaiveThicknessPruningAlgo(PruningAlgo):
     def __init__(self, g: Graph, npg: NodePathGraph):
@@ -562,10 +574,11 @@ class NaiveThicknessPruningAlgo(PruningAlgo):
             max_thickness = max(max_thickness, node.radius)
 
         for path in self.npGraph.paths:
-            if (path.one.radius + path.other.radius)/2 > thresh*max_thickness:
+            if (path.one.radius + path.other.radius) / 2 > thresh * max_thickness:
                 edge_list.append([path.one.index, path.other.index])
 
-        return Graph(point_list,edge_list)
+        return Graph(point_list, edge_list)
+
 
 class ETPruningAlgo(PruningAlgo):
 
@@ -606,6 +619,7 @@ def has_endpoint(cluster: list, node: Node):
 
     return False
 
+
 def cluster_endpoints(c: list) -> list:
     points_list, connecting_points = list(), list()
     dict = {}
@@ -624,6 +638,7 @@ def cluster_endpoints(c: list) -> list:
             connecting_points.append(key)
 
     return connecting_points
+
 
 class AnglePruningAlgo(PruningAlgo):
 
@@ -656,7 +671,10 @@ class AnglePruningAlgo(PruningAlgo):
         return resulting_text
 
     def generate_dynamic_tree(self):
-        #testing
+
+        # gimme text file
+        self.npGraph.to_angle_text_file()
+        # testing
         dynamic_tree = self.npGraph.to_dynamic_tree_junction()
 
         reward_list = []
@@ -664,20 +682,46 @@ class AnglePruningAlgo(PruningAlgo):
         for node in dynamic_tree.nodes:
             reward_list.append(node.reward)
 
-        alpha_list, tree_list = Algorithm(dynamic_tree).execute(dynamic_tree)
+        dynamicAlgo = Algorithm(dynamic_tree)
 
-        return alpha_list, tree_list, reward_list
+        alpha_list = dynamicAlgo.execute(dynamic_tree)
+
+        with open("threshold_result.txt", 'w') as f:
+
+            for path in self.npGraph.paths:
+                f.write(str(dynamicAlgo.tree.nodes[path.TreeNodeIndex].drop_threshold) + ' ')
+                path.drop_threshold = dynamicAlgo.tree.nodes[path.TreeNodeIndex].drop_threshold
+                f.write(str(path.isCore))
+                f.write('\n')
+
+        f.close()
+
+        return alpha_list, reward_list, dynamicAlgo.tree
+
+    def dynamic_to_graph_with_color(self):
+
+        thresh = [path.drop_threshold for path in self.npGraph.paths]
+
+        curr_max = 0
+        curr_min = math.inf
+
+        for t in thresh:
+            if t != math.inf:
+                curr_max = max(t, curr_max)
+            curr_min = min(t, curr_min)
+
+        norm = [1 if t == math.inf else (t - curr_min) / (curr_max - curr_min) * 0.7 + 0.2 for t in thresh]
+
+        clist = cm.rainbow(norm)
+
+        color = [cl.to_hex(c) for c in clist]
+
+        return self.graph, thresh, color
 
     def dynamic_prune(self, thresh: float):
-        alpha_list, tree_list, reward_list = self.generate_dynamic_tree()
+        alpha_list, reward_list, result_tree = self.generate_dynamic_tree()
 
-        result_tree = tree_list[-1]
-        for i in range(1, len(alpha_list)):
-            if alpha_list[i] > thresh:
-                result_tree = tree_list[i - 1]
-                break
-
-        return result_tree, tree_list, reward_list, alpha_list
+        return result_tree, reward_list, alpha_list
 
     # gives output file for the dapcstp solver
     def prune(self, thresh: float):
