@@ -105,8 +105,15 @@ class Display:
             edge_layer.draw(g,config)
             self.layers.append(edge_layer)
 
+    def draw_layer_string(self, g : graph.Graph, config : drawing.PointEdgeConfig, name : str):
+        graph_layer = self.find(name)
+        if graph_layer is None:
+            graph_layer = GraphLayer.create(name)
+        graph_layer.draw(g,config)
+        self.layers.append(graph_layer)
+
     def draw_layer(self, g : graph.Graph, config : drawing.PointEdgeConfig, name : str) :
-        if self.config.flag_raise(name): 
+        if self.config.flag_raise(name):
             graph_layer = self.find(name)
             if graph_layer is None:
                 graph_layer = GraphLayer.create(name)

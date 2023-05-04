@@ -5,8 +5,8 @@ Created on Mon Feb 14 15:32:30 2022
 @author: Yigan
 """
 import napari
-#import sys
-from qtpy.QtWidgets import QWidget, QCheckBox, QPushButton,QSlider,QLabel
+# import sys
+from qtpy.QtWidgets import QWidget, QCheckBox, QPushButton, QSlider, QLabel, QVBoxLayout, QFileDialog
 from PyQt5.QtCore import Qt
 from .display import Display
 from . import mainalgo
@@ -14,26 +14,29 @@ from . import mainalgo
 main_widget = "main"
 debug_widget = "debug"
 
+
 class WidgetManager:
-    
     __instance = None
-    
+
     def inst():
         if WidgetManager.__instance is None:
             WidgetManager.__instance = WidgetManager()
         return WidgetManager.__instance
-    
+
     def __init__(self):
         self.widgets = list()
-    
+
     def start(self):
+        '''
         for w in self.widgets:
             w.sync()
-    
-    def add(self, widget : QWidget):
+        '''
+        print("started")
+
+    def add(self, widget: QWidget):
         self.widgets.append(widget)
-    
-    def find(self, name : str) -> QWidget:
+
+    def find(self, name: str) -> QWidget:
         for w in self.widgets:
             if w.name == name:
                 return w
@@ -42,173 +45,120 @@ class WidgetManager:
 
 class MainWidget(QWidget):
 
-    def __init__(self, viewer : napari.Viewer, parent=None):
+    def __init__(self, viewer: napari.Viewer, parent=None):
         super().__init__(parent)
+
         self.name = main_widget
 
         self.runButton = QPushButton(self)
-        self.runButton.setText("Run")
+        self.runButton.setText("Load Image")
         self.runButton.clicked.connect(MainWidget.run)
-        self.runButton.move(0, 0)
-        
-        self.resetButton = QPushButton(self)
-        self.resetButton.setText("Reset")
-        self.resetButton.clicked.connect(MainWidget.reset)
-        self.runButton.move(0, 40)
-        
-        s,t = self.__make_slider_label()
-        self.thSlider = s
-        self.thSText = t
-        self.thSlider.valueChanged.connect(self.set_bi_thr)
-        self.thSlider.sliderReleased.connect(self.set_bithr_lift)
-        self.thSlider.move(0,80)
-        self.thSText.move(0,100)
-        
-        s,t = self.__make_slider_label()
+        self.runButton.move(0, 10)
+
+        self.valabel = QPushButton(self)
+        self.valabel.setText("VA")
+        self.valabel.move(10, 60)
+
+        self.va_color_button = QPushButton(self)
+        self.va_color_button.setText("Color")
+        self.va_color_button.clicked.connect(MainWidget.va_color)
+
+        self.va_graph_button = QPushButton(self)
+        self.va_graph_button.setText("Graph")
+        self.va_graph_button.clicked.connect(MainWidget.va_graph)
+
+        self.va_color_button.move(60,60)
+        self.va_graph_button.move(120,60)
+
+        s, t = self.__make_slider_label()
+        self.vaSlider = s
+        self.vaSText = t
+
+        self.vaSlider.setRange(0,65)
+
+        self.vaSlider.valueChanged.connect(self.set_va_thr)
+        self.vaSlider.sliderReleased.connect(self.set_vathr_lift)
+        self.vaSlider.move(0, 120)
+        self.vaSText.move(100, 120)
+        self.vaSText.setText("Alpha: " + str(self.vaSlider.value()) + "degree")
+
+        #et
+        self.etlabel = QPushButton(self)
+        self.etlabel.setText("ET")
+        self.etlabel.move(10, 180)
+
+        self.et_color_button = QPushButton(self)
+        self.et_color_button.setText("Color")
+        self.et_color_button.clicked.connect(MainWidget.et_color)
+
+        self.et_graph_button = QPushButton(self)
+        self.et_graph_button.setText("Graph")
+        self.et_graph_button.clicked.connect(MainWidget.et_graph)
+
+        self.et_color_button.move(60, 180)
+        self.et_graph_button.move(120, 180)
+
+        s, t = self.__make_slider_label()
         self.etSlider = s
         self.etSText = t
-        self.etSlider.valueChanged.connect(self.set_thr)
-        self.etSlider.sliderReleased.connect(self.set_thr_lift)
-        self.etSlider.move(0,140)
-        self.etSText.move(0,160)
 
-        #the four sliders
+        self.etSlider.setRange(0, 100)
 
-        #slider for naive thickness
-        s,t = self.__make_slider_label()
-        self.slider1 = s
-        self.slider1_text = t
-
-        self.slider1.valueChanged.connect(self.set_slider1_thr) #TODO link to value in mainalgo
-        self.slider1.sliderReleased.connect(self.set_slider1_lift) #TODO need to change this (don't want it update real time)
-        self.slider1.move(0, 200)
-        self.slider1_text.move(0, 220)
-
-        # slider for naive angle
-        s, t = self.__make_slider_label()
-        self.slider2 = s
-        self.slider2_text = t
-
-        self.slider2.valueChanged.connect(self.set_slider2_thr)
-        self.slider2.sliderReleased.connect(self.set_slider2_lift)
-        self.slider2.move(0, 260)
-        self.slider2_text.move(0, 280)
-
-        # slider for ET
-        s, t = self.__make_slider_label()
-        self.slider3 = s
-        self.slider3_text = t
-
-        self.slider3.valueChanged.connect(self.set_slider3_thr)
-        self.slider3.sliderReleased.connect(self.set_slider3_lift)
-        self.slider3.move(0, 320)
-        self.slider3_text.move(0, 340)
-
-        # slider for dynamic angle method
-        s, t = self.__make_slider_label()
-        self.slider4 = s
-        self.slider4_text = t
-
-        self.slider4.valueChanged.connect(self.set_slider4_thr)
-        self.slider4.sliderReleased.connect(self.set_slider4_lift)
-        self.slider4.move(0, 380)
-        self.slider4_text.move(0, 400)
-
-        self.fullModeBox = QCheckBox(self)
-        self.fullModeBox.setText("Enable full mode?")
-        self.fullModeBox.move(0, 440)
-
-        #old box
-        self.modeBox = QCheckBox(self)
-        self.modeBox.setText("Use Angle")
-        self.modeBox.move(0, 480)
-        
-        self.set_bi_thr()
-        self.set_thr()
-        self.set_slider1_thr()
-        self.set_slider2_thr()
-        self.set_slider3_thr()
-        self.set_slider4_thr()
+        self.etSlider.valueChanged.connect(self.set_et_thr)
+        self.etSlider.sliderReleased.connect(self.set_etthr_lift)
+        self.etSlider.move(0, 240)
+        self.etSText.move(100, 240)
+        self.etSText.setText("Threshold: " + str(self.etSlider.value()) + "%")
 
         WidgetManager.inst().add(self)
-    
-    def sync(self):
-        c = self.modeBox.isChecked()
-        d = self.fullModeBox.isChecked()
-
-        if d:
-            mainalgo.SkeletonApp.inst().reset_method(2)
-        elif c:
-            mainalgo.SkeletonApp.inst().reset_method(1)
-        else:
-            mainalgo.SkeletonApp.inst().reset_method(0)
 
     def run():
         WidgetManager.inst().start()
         mainalgo.SkeletonApp.inst().run()
 
-    def set_bi_thr(self):
-        self.thSText.setText("thr : " + str(self.thSlider.value()) + "%")
-    
-    def set_bithr_lift(self):
-        mainalgo.SkeletonApp.inst().reset_bithresh(self.thSlider.value())
-    
-    def set_thr(self):        
-        self.etSText.setText("et : " + str(self.etSlider.value()) + "%")
-    
-    def set_thr_lift(self):
+    def va_color():
+        mainalgo.SkeletonApp.inst().va_color()
+
+    def va_graph():
+        mainalgo.SkeletonApp.inst().va_graph()
+
+    def set_va_thr(self):
+        self.vaSText.setText("Alpha: " + str(self.vaSlider.value()) + " degree")
+
+    def set_vathr_lift(self):
+        mainalgo.SkeletonApp.inst().reset_vathresh(self.vaSlider.value())
+
+    def et_color():
+        mainalgo.SkeletonApp.inst().et_color()
+
+    def et_graph():
+        mainalgo.SkeletonApp.inst().et_graph()
+
+    def set_et_thr(self):
+        self.etSText.setText("Threshold: " + str(self.etSlider.value()) + " %")
+
+    def set_etthr_lift(self):
         mainalgo.SkeletonApp.inst().reset_etthresh(self.etSlider.value())
 
-    def set_slider1_lift(self):
-        mainalgo.SkeletonApp.inst().reset_thicknessthresh(self.slider1.value())
-    def set_slider2_lift(self):
-        mainalgo.SkeletonApp.inst().reset_anglethresh(self.slider2.value())
-
-    def set_slider3_lift(self):
-        mainalgo.SkeletonApp.inst().reset_Erosionthresh(self.slider3.value())
-
-    def set_slider4_lift(self):
-        mainalgo.SkeletonApp.inst().reset_dynamicthresh(self.slider4.value())
-
-    def set_slider1_thr(self):
-        self.slider1_text.setText("Thickness: " + str(self.slider1.value()) + "%")
-
-    def set_slider2_thr(self):
-        self.slider2_text.setText("Angle: " + str(self.slider2.value()) + "%")
-
-    def set_slider3_thr(self):
-        self.slider3_text.setText("Erosion : " + str(self.slider3.value()) + "%")
-
-    def set_slider4_thr(self):
-        self.slider4_text.setText("Dynamic angle : " + str(self.slider4.value()) + "%")
-
-    def reset():
-        mainalgo.SkeletonApp.inst().reset_algo()
-        Display.current().removeall()
-    
     def __make_slider_label(self):
         slider = QSlider(Qt.Horizontal, self)
-        slider.setRange(0,100)
+        slider.setRange(0, 100)
         sText = QLabel('0', self)
         sText.setMinimumWidth(80)
-        return slider,sText
-    
-    
+        return slider, sText
 
 class DebugWidget(QWidget):
     """Any QtWidgets.QWidget or magicgui.widgets.Widget subclass can be used."""
 
-
-    def __init__(self, viewer : napari.Viewer, parent=None):
+    def __init__(self, viewer: napari.Viewer, parent=None):
         super().__init__(parent)
-        
+
         self.name = debug_widget
 
-
-        self.show_edge_box = self.__make_box("show boundary", 0)       
-        self.show_vor_box = self.__make_box("show full voronoi", 40)        
-        self.show_intvor_box = self.__make_box("show internal voronoi", 80)        
-        self.show_hm_box = self.__make_box("show heatmap", 120)       
+        self.show_edge_box = self.__make_box("show boundary", 0)
+        self.show_vor_box = self.__make_box("show full voronoi", 40)
+        self.show_intvor_box = self.__make_box("show internal voronoi", 80)
+        self.show_hm_box = self.__make_box("show heatmap", 120)
         self.show_bt_box = self.__make_box("show burn time", 160)
         self.show_et_box = self.__make_box("show et", 200)
         self.show_final_box = self.__make_box("show final", 240)
@@ -222,7 +172,7 @@ class DebugWidget(QWidget):
         self.output_skeleton = self.__make_box("output skeleton graph", 560)
 
         WidgetManager.inst().add(self)
-    
+
     def sync(self):
         config = Display.current().config
         config.show_edgepoints = self.show_edge_box.isChecked()
@@ -242,13 +192,13 @@ class DebugWidget(QWidget):
         config.output_skeleton = self.output_skeleton.isChecked()
 
         Display.current().set_config(config)
-    
+
     def __make_box(self, text, position):
         box = QCheckBox(self)
         box.setText(text)
         box.move(0, position)
         return box
-        
+
 
 '''
 app = QApplication(sys.argv)

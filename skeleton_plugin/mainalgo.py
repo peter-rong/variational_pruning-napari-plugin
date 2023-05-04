@@ -32,20 +32,15 @@ class AppStatus:
     def __init__(self):
         self.biThresh = 0
         self.etThresh = 0
-        self.method = 0
+        self.vaThresh = 0
         self.shape = None
-        self.angleThresh = 0
-        self.thicknessThresh = 0
-        self.erosionThresh = 0
-        self.dynamicThresh = 0
-
 
 class SkeletonApp:
     __current = None
-    etThresh = 10
     hasSolution = False
     dynamic_graph = None
     threshold_list = None
+    color_list = None
 
     def __init__(self):
         self.algoStatus = AlgoStatus()
@@ -58,6 +53,7 @@ class SkeletonApp:
         if SkeletonApp.__current is None:
             SkeletonApp.__current = SkeletonApp()
         return SkeletonApp.__current
+
 
     def run(self):
         self.timer.clear()
@@ -73,53 +69,41 @@ class SkeletonApp:
 
         self.timer.print_records()
 
-    def reset_anglethresh(self, newT: float):
-        self.appStatus.angleThresh = newT
-        self.stm.change_state(aps.ResponseState())  # TODO
-        self.__runall()
+    def va_color(self):
+        if not self.hasSolution:
+            print("No solution yet, cannot draw graph")
 
-    def reset_thicknessthresh(self, newT: float):
-        self.appStatus.thicknessThresh = newT
-        self.stm.change_state(aps.ResponseState())  # TODO
-        self.__runall()
+        else:
+            self.stm.change_state(aps.VaColorState())
+            self.stm.execute()
+            self.timer.print_records()
 
-    def reset_Erosionthresh(self, newT: float):
-        self.appStatus.erosionThresh = newT
-        self.stm.change_state(aps.ResponseState())  # TODO
-        self.__runall()
+    def va_graph(self):
+        if not self.hasSolution:
+            print("No solution yet, cannot draw graph")
 
-    def reset_dynamicthresh(self, newT: float):
-        self.appStatus.dynamicThresh = newT
-        self.stm.change_state(aps.ResponseState())  # TODO
-        self.__runall()
+        else:
+            self.stm.change_state(aps.VaGraphState())
+            self.stm.execute()
+            self.timer.print_records()
 
-    def reset_bithresh(self, newT: float):
-        self.appStatus.biThresh = newT
-        self.stm.change_state(aps.ThreshState())
-        self.__runall()
+    def et_graph(self):
+        #TODO
+        print("Print ET Graph")
+
+    def et_color(self):
+        #TODO
+        print("Print ET Color")
+    def reset_vathresh(self, newT: float):
+        self.appStatus.vaThresh = newT
 
     def reset_etthresh(self, newT: float):
         self.appStatus.etThresh = newT
-        # self.stm.change_state(aps.ETPruneState())
-        self.stm.change_state(aps.PruneChoosingState())
-        self.__runall()
-
-    def reset_method(self, met: float):
-        self.appStatus.method = met
-
-    def reset_algo(self):
-        self.algoStatus = AlgoStatus()
-        print("successful reset")
-
-        self.hasSolution = False
-        self.dynamic_graph = None
-        self.threshold_list = None
 
     def __runall(self):
         while self.stm.valid():
             self.stm.execute()
             self.stm.to_next()
-
 
 def run():
     # ta.test_boundary_edge([]);

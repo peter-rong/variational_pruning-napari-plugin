@@ -26,7 +26,8 @@ class TimeRecord:
         for stamp in self.stamps:
             print(self.__stamp_to_str(stamp))
         print("------ end of records ------")
-        self.print_solver_time()
+
+        self.stamps = list()
 
     def print_solver_time(self):
         print("------ printing solver total time ------")

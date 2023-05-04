@@ -121,7 +121,7 @@ class BTState(st.State):
         tRec().stamp("Draw Burn Graph")
 
     def get_next(self):
-        return PruneChoosingState()
+        return ExecuteState()
 
     def __draw(self, radi, layerName):
         peConfig = ma.get_vorgraph_config(get_size())
@@ -131,16 +131,67 @@ class BTState(st.State):
         ds.Display.current().draw_layer(algo_st().graph, peConfig, layerName)
 
 
-class PruneChoosingState(st.State):
+class ExecuteState(st.State):
+    def execute(self):
+        # dynamic
+        dynamic_graph = algo_st().algo.graph.duplicate()
+        dynamic_npGraph = algo_st().algo.npGraph.duplicate()
 
-    def get_next(self):
+        angles = graph.get_angle(algo_st().graph.edge_ids, algo_st().vor)
 
-        if app_st().method == 0:
-            return ETPruneState()
-        elif app_st().method == 1:
-            return AngleState()
-        else:
-            return ResponseState()
+        dynamic_npGraph.set_angles(angles)
+        dynamic_prune_algo = AnglePruningAlgo(dynamic_graph, dynamic_npGraph)
+
+        dynamic_tree, dynamic_reward_list, dynamic_alpha_list = dynamic_prune_algo.dynamic_prune(0)
+
+        dynamic_graph_with_threshold, dynamic_graph_thresh, dynamic_color_list_with_threshold = dynamic_prune_algo.dynamic_to_graph_with_color()
+
+        ma.SkeletonApp.inst().dynamic_graph = dynamic_graph_with_threshold
+        ma.SkeletonApp.inst().threshold_list = dynamic_graph_thresh
+        ma.SkeletonApp.inst().color_list = dynamic_color_list_with_threshold
+
+        ma.SkeletonApp.inst().hasSolution = True
+
+        tRec().stamp("End ExecuteState")
+
+class VaColorState(st.State):
+    def execute(self):
+        if ma.SkeletonApp.inst().hasSolution:
+
+            dynamic_threshold = app_st().vaThresh / 100.0
+
+            dynamic_graph = ma.SkeletonApp.inst().dynamic_graph
+            threshold_list = ma.SkeletonApp.inst().threshold_list
+            color_list = ma.SkeletonApp.inst().color_list
+
+            dynamicConfig = ma.get_dynamicGraph_config(get_size())
+            dynamicConfig.edgeConfig.edge_color = color_list
+
+            ds.Display.current().removeall()
+
+            ds.Display.current().draw_layer_string(dynamic_graph, dynamicConfig, "VA_color")
+            tRec().stamp("Va Color State Draw")
+
+class VaGraphState(st.State):
+    def execute(self):
+
+        print("IM HERE")
+
+        if ma.SkeletonApp.inst().hasSolution:
+
+            dynamic_threshold = app_st().vaThresh / 100.0
+
+            dynamic_graph = ma.SkeletonApp.inst().dynamic_graph
+            threshold_list = ma.SkeletonApp.inst().threshold_list
+
+            dynamic_result_graph = graph.prune_graph_from_edge(dynamic_graph, threshold_list, dynamic_threshold)
+            dynamicConfig = ma.get_dynamicGraph_config(get_size())
+
+            ds.Display.current().removeall()
+
+            ds.Display.current().draw_layer_string(dynamic_result_graph, dynamicConfig, "VA_graph")
+
+            tRec().stamp("Va Graph State Draw")
 
 class ResponseState(st.State):
     def execute(self):
