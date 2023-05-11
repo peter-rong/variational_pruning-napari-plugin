@@ -40,7 +40,6 @@ def default_config() -> LayerConfig:
     return config
 
 
-
 def angular_default_config() ->LayerConfig:
     config = LayerConfig();
     config.name = "new_layer"

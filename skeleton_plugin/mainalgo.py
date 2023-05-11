@@ -38,6 +38,8 @@ class AppStatus:
 class SkeletonApp:
     __current = None
     hasSolution = False
+    graph = None
+    ets = None
     dynamic_graph = None
     threshold_list = None
     color_list = None
@@ -78,27 +80,42 @@ class SkeletonApp:
             self.stm.execute()
             self.timer.print_records()
 
-    def va_graph(self):
+    def va_prune(self):
         if not self.hasSolution:
             print("No solution yet, cannot draw graph")
 
         else:
-            self.stm.change_state(aps.VaGraphState())
+            self.stm.change_state(aps.VaPruneState())
             self.stm.execute()
             self.timer.print_records()
 
-    def et_graph(self):
-        #TODO
-        print("Print ET Graph")
 
     def et_color(self):
-        #TODO
-        print("Print ET Color")
+        if not self.hasSolution:
+            print("No solution yet, cannot draw graph")
+
+        else:
+            self.stm.change_state(aps.EtColorState())
+            self.stm.execute()
+            self.timer.print_records()
+
+    def et_prune(self):
+        if not self.hasSolution:
+            print("No solution yet, cannot draw graph")
+
+        else:
+            self.stm.change_state(aps.EtPruneState())
+            self.stm.execute()
+            self.timer.print_records()
+
     def reset_vathresh(self, newT: float):
         self.appStatus.vaThresh = newT
 
     def reset_etthresh(self, newT: float):
         self.appStatus.etThresh = newT
+
+    def reset_bithresh(self, newT: float):
+        self.appStatus.biThresh = newT
 
     def __runall(self):
         while self.stm.valid():

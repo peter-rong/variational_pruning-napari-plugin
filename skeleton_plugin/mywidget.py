@@ -55,48 +55,62 @@ class MainWidget(QWidget):
         self.runButton.clicked.connect(MainWidget.run)
         self.runButton.move(0, 10)
 
+        s, t = self.__make_slider_label()
+        self.biSlider = s
+        self.biSText = t
+
+        self.biSlider.setRange(0, 100)
+
+        self.biSlider.valueChanged.connect(self.set_bi_thr)
+        self.biSlider.sliderReleased.connect(self.set_bithr_lift)
+        self.biSlider.move(0, 40)
+        self.biSText.move(100, 40)
+        self.biSText.setText("Binary: " + str(self.biSlider.value()) +"%")
+
+        #va
+
         self.valabel = QPushButton(self)
         self.valabel.setText("VA")
-        self.valabel.move(10, 60)
+        self.valabel.move(10, 80)
 
         self.va_color_button = QPushButton(self)
         self.va_color_button.setText("Color")
         self.va_color_button.clicked.connect(MainWidget.va_color)
 
         self.va_graph_button = QPushButton(self)
-        self.va_graph_button.setText("Graph")
-        self.va_graph_button.clicked.connect(MainWidget.va_graph)
+        self.va_graph_button.setText("Prune")
+        self.va_graph_button.clicked.connect(MainWidget.va_prune)
 
-        self.va_color_button.move(60,60)
-        self.va_graph_button.move(120,60)
+        self.va_color_button.move(60,80)
+        self.va_graph_button.move(120,80)
 
         s, t = self.__make_slider_label()
         self.vaSlider = s
         self.vaSText = t
 
-        self.vaSlider.setRange(0,65)
+        self.vaSlider.setRange(0,110)
 
         self.vaSlider.valueChanged.connect(self.set_va_thr)
         self.vaSlider.sliderReleased.connect(self.set_vathr_lift)
-        self.vaSlider.move(0, 120)
-        self.vaSText.move(100, 120)
+        self.vaSlider.move(0, 140)
+        self.vaSText.move(100, 140)
         self.vaSText.setText("Alpha: " + str(self.vaSlider.value()) + "degree")
 
         #et
         self.etlabel = QPushButton(self)
         self.etlabel.setText("ET")
-        self.etlabel.move(10, 180)
+        self.etlabel.move(10, 200)
 
         self.et_color_button = QPushButton(self)
         self.et_color_button.setText("Color")
         self.et_color_button.clicked.connect(MainWidget.et_color)
 
         self.et_graph_button = QPushButton(self)
-        self.et_graph_button.setText("Graph")
-        self.et_graph_button.clicked.connect(MainWidget.et_graph)
+        self.et_graph_button.setText("Prune")
+        self.et_graph_button.clicked.connect(MainWidget.et_prune)
 
-        self.et_color_button.move(60, 180)
-        self.et_graph_button.move(120, 180)
+        self.et_color_button.move(60, 200)
+        self.et_graph_button.move(120, 200)
 
         s, t = self.__make_slider_label()
         self.etSlider = s
@@ -106,8 +120,8 @@ class MainWidget(QWidget):
 
         self.etSlider.valueChanged.connect(self.set_et_thr)
         self.etSlider.sliderReleased.connect(self.set_etthr_lift)
-        self.etSlider.move(0, 240)
-        self.etSText.move(100, 240)
+        self.etSlider.move(0, 260)
+        self.etSText.move(100, 260)
         self.etSText.setText("Threshold: " + str(self.etSlider.value()) + "%")
 
         WidgetManager.inst().add(self)
@@ -119,8 +133,14 @@ class MainWidget(QWidget):
     def va_color():
         mainalgo.SkeletonApp.inst().va_color()
 
-    def va_graph():
-        mainalgo.SkeletonApp.inst().va_graph()
+    def va_prune():
+        mainalgo.SkeletonApp.inst().va_prune()
+
+    def set_bi_thr(self):
+        self.biSText.setText("Binary: " + str(self.biSlider.value()) +"%")
+
+    def set_bithr_lift(self):
+        mainalgo.SkeletonApp.inst().reset_bithresh(self.biSlider.value())
 
     def set_va_thr(self):
         self.vaSText.setText("Alpha: " + str(self.vaSlider.value()) + " degree")
@@ -131,8 +151,8 @@ class MainWidget(QWidget):
     def et_color():
         mainalgo.SkeletonApp.inst().et_color()
 
-    def et_graph():
-        mainalgo.SkeletonApp.inst().et_graph()
+    def et_prune():
+        mainalgo.SkeletonApp.inst().et_prune()
 
     def set_et_thr(self):
         self.etSText.setText("Threshold: " + str(self.etSlider.value()) + " %")

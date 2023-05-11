@@ -323,6 +323,21 @@ def get_color_list(dist: list) -> list:
     '''
     return [cl.to_hex(c) for c in clist]
 
+def get_edge_weighted_color_list(dist: list, edges: list) -> list:
+
+    avg = list()
+    for e in edges:
+        x = e[0]
+        y = e[1]
+        avg.append((dist[x] + dist[y])/2)
+
+    data = np.array(avg)
+    norm = (data - np.min(data)) / (np.max(data) - np.min(data))
+    norm = norm * 0.8 + 0.2
+    clist = cm.rainbow(norm)
+
+    return [cl.to_hex(c) for c in clist]
+
 
 def get_edge_color_list(colors: list, edges: list) -> list:
     col = list()

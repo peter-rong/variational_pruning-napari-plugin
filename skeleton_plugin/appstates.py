@@ -118,6 +118,10 @@ class BTState(st.State):
         ets = algo_st().algo.npGraph.get_ets()
         self.__draw(bts, ds.burnTime)
         self.__draw(ets, ds.erosionT)
+
+        ma.SkeletonApp.inst().graph = algo_st().graph
+        ma.SkeletonApp.inst().ets = ets
+
         tRec().stamp("Draw Burn Graph")
 
     def get_next(self):
@@ -154,11 +158,56 @@ class ExecuteState(st.State):
 
         tRec().stamp("End ExecuteState")
 
+class EtColorState(st.State):
+
+    def execute(self):
+        if ma.SkeletonApp.inst().hasSolution:
+
+            ets = ma.SkeletonApp.inst().ets
+            Etgraph = ma.SkeletonApp.inst().graph
+
+            peConfig = ma.get_dynamicGraph_config(get_size())
+
+            peConfig.edgeConfig.edge_color = graph.get_edge_weighted_color_list(ets, Etgraph.edgeIndex)
+
+            ds.Display.current().removeall()
+
+            ds.Display.current().draw_edge_layer(Etgraph, peConfig, "ET_color")
+            tRec().stamp("Et Color State Draw")
+
+class EtPruneState(st.State):
+
+    def execute(self):
+        if ma.SkeletonApp.inst().hasSolution:
+
+            ets = ma.SkeletonApp.inst().ets
+            Etgraph = ma.SkeletonApp.inst().graph
+
+            curr_max = 0
+            for e in Etgraph.edgeIndex:
+                x = e[0]
+                y = e[1]
+                curr_max = max(curr_max,(ets[x] + ets[y]) / 2)
+
+            et_threshold = curr_max* app_st().etThresh / 100.0
+
+            peConfig = ma.get_dynamicGraph_config(get_size())
+
+            flags = [0 if ets[i] < et_threshold else 1 for i in range(len(Etgraph.points))]
+            Et_result_graph = graph.prune_graph(Etgraph, flags)
+
+            peConfig.edgeConfig.edge_color = 'green'
+
+            ds.Display.current().removeall()
+
+            ds.Display.current().draw_edge_layer(Et_result_graph, peConfig, "ET_prune")
+            tRec().stamp("Et prune State Draw")
+
 class VaColorState(st.State):
     def execute(self):
         if ma.SkeletonApp.inst().hasSolution:
 
-            dynamic_threshold = app_st().vaThresh / 100.0
+            dynamic_threshold = app_st().vaThresh / 90.0
 
             dynamic_graph = ma.SkeletonApp.inst().dynamic_graph
             threshold_list = ma.SkeletonApp.inst().threshold_list
@@ -169,17 +218,17 @@ class VaColorState(st.State):
 
             ds.Display.current().removeall()
 
-            ds.Display.current().draw_layer_string(dynamic_graph, dynamicConfig, "VA_color")
+            ds.Display.current().draw_edge_layer(dynamic_graph, dynamicConfig, "VA_color")
             tRec().stamp("Va Color State Draw")
 
-class VaGraphState(st.State):
+class VaPruneState(st.State):
     def execute(self):
 
         print("IM HERE")
 
         if ma.SkeletonApp.inst().hasSolution:
 
-            dynamic_threshold = app_st().vaThresh / 100.0
+            dynamic_threshold = app_st().vaThresh / 90.0
 
             dynamic_graph = ma.SkeletonApp.inst().dynamic_graph
             threshold_list = ma.SkeletonApp.inst().threshold_list
@@ -189,9 +238,9 @@ class VaGraphState(st.State):
 
             ds.Display.current().removeall()
 
-            ds.Display.current().draw_layer_string(dynamic_result_graph, dynamicConfig, "VA_graph")
+            ds.Display.current().draw_edge_layer(dynamic_result_graph, dynamicConfig, "VA_prune")
 
-            tRec().stamp("Va Graph State Draw")
+            tRec().stamp("Va Prune State Draw")
 
 class ResponseState(st.State):
     def execute(self):

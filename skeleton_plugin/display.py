@@ -98,12 +98,12 @@ class Display:
 
     #method for just drawing edge layer
     def draw_edge_layer(self, g : graph.Graph, config : drawing.PointEdgeConfig, name : str) :
-        if self.config.flag_raise(name):
-            edge_layer = self.find(name)
-            if edge_layer is None:
-                edge_layer = EdgeLayer.create(name)
-            edge_layer.draw(g,config)
-            self.layers.append(edge_layer)
+
+        edge_layer = self.find(name)
+        if edge_layer is None:
+            edge_layer = EdgeLayer.create(name)
+        edge_layer.draw(g,config)
+        self.layers.append(edge_layer)
 
     def draw_layer_string(self, g : graph.Graph, config : drawing.PointEdgeConfig, name : str):
         graph_layer = self.find(name)
@@ -170,9 +170,8 @@ class EdgeLayer:
         #self.edgeLayer.edge_width = ec.size
 
         if self.edgeLayer.visible:
-            pass
-            #self.edgeLayer.edge_color = ec.edge_color
-            #self.edgeLayer.face_color = ec.face_color
+            self.edgeLayer.edge_color = ec.edge_color
+            self.edgeLayer.face_color = ec.face_color
 
 
         self.edgeLayer.selected_data = set()

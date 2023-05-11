@@ -34,6 +34,7 @@ class Node:
         self.index = -1
         self.inSol = True
         self.reward = 0
+        self.et_thresh = None
 
     def et(self):
         return self.bt - self.radius
@@ -585,6 +586,15 @@ class ETPruningAlgo(PruningAlgo):
     def __init__(self, g: Graph, npg: NodePathGraph):
         super().__init__(g, npg)
 
+    def full_prune(self, thresh: float):
+
+        d_ones = self.npGraph.get_degree_ones()
+        pq = PriorityQueue()
+        for n in d_ones:
+            pq.put(PItem(n.et(), n))
+
+        return
+
     def prune(self, thresh: float) -> Graph:
 
         removed = set()
@@ -702,15 +712,7 @@ class AnglePruningAlgo(PruningAlgo):
 
         thresh = [path.drop_threshold for path in self.npGraph.paths]
 
-        curr_max = 0
-        curr_min = math.inf
-
-        for t in thresh:
-            if t != math.inf:
-                curr_max = max(t, curr_max)
-            curr_min = min(t, curr_min)
-
-        norm = [1 if t == math.inf else (t - curr_min) / (curr_max - curr_min) * 0.7 + 0.2 for t in thresh]
+        norm = [1 if t == math.inf else t * 0.7 + 0.2 for t in thresh] #1 if inf, 0.2 to 0.9 otherwise
 
         clist = cm.rainbow(norm)
 
