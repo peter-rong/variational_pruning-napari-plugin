@@ -1,7 +1,6 @@
 import sys
 from . import graph
 import math
-
 class DynamicTreeNode:
 
     def __init__(self, point, r: float, c: float):
@@ -16,10 +15,8 @@ class DynamicTreeNode:
         self.total_cost = c  # temporary cost
         self.edges = list()
 
-        self.index = -1
-
+        self.index = -1 #TODO
         self.drop_threshold = math.inf
-        self.drop_index = None
 
     def add_edge(self, edge):
         self.edges.append(edge)
@@ -41,7 +38,7 @@ class DynamicTreeNode:
             if self.get_other_node(e) == otherNode:
                 return e
 
-        print('Edge not found, error')
+        print('Edge not fount, error')
         return None
 
     def set_score(self):
@@ -97,13 +94,12 @@ class DynamicTree:
         for i in range(len(points)):
             newNode = DynamicTreeNode(points[i], reward_list[i], cost_list[i])
             newNode.index = len(self.nodes)
-
             self.nodes.append(newNode)
 
         for i in range(len(edgeIndex)):
             firstIndex = edgeIndex[i][0]
             secondIndex = edgeIndex[i][1]
-            edge = DynamicTreeEdge(cost_list[i], self.nodes[firstIndex], self.nodes[secondIndex])
+            edge = DynamicTreeEdge(self.nodes[firstIndex], self.nodes[secondIndex])
             self.nodes[firstIndex].add_edge(edge)
             self.nodes[secondIndex].add_edge(edge)
             self.edges.append(edge)
@@ -121,42 +117,6 @@ class DynamicTree:
             newTree.add_edge(newEdge)
 
         return newTree
-
-
-    def to_colored_graph(self, tree_list: list):
-
-        tree = tree_list[0]
-        color_list = [0] * len(tree.edges)
-        index = len(tree_list)
-
-        for i in range(len(tree.edges)):
-            color = 1.0
-            for j in range(len(tree_list)):
-                if not tree_list[j].hasEdge(tree.edges[i]):
-                    color = float(j) / len(tree_list)
-                    break
-            color_list[i] = color
-
-        graph = tree.to_graph()
-        return graph, color_list
-
-    def to_graph(self) -> graph.Graph:
-
-        tree_graph = graph.Graph([], [])
-
-        for node in self.nodes:
-            tree_graph.points.append(node.point)
-
-        for edge in self.edges:
-            node1 = edge.one
-            node2 = edge.other
-
-            index1 = self.nodes.index(node1)
-            index2 = self.nodes.index(node2)
-
-            tree_graph.edgeIndex.append([index1, index2])
-
-        return tree_graph
 
     def get_leaves(self):
         leaves_list = list()

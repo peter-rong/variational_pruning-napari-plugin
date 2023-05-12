@@ -64,6 +64,50 @@ class ThreshState(st.State):
             return None
         return BoundaryState()
 
+class ReadCurveState(st.State):
+
+    def execute(self):
+        algo_st().raw_data = self.__read_data()
+        app_st().shape = algo_st().raw_data.shape
+        tRec().stamp("Read Curve Data")
+
+    def get_next(self):
+        return ThreshCurveState()
+
+    def __read_data(self):
+        viewer = ds.Display.current().viewer
+        layer = viewer.layers[0]
+        return layer.data_raw
+
+class ThreshCurveState(st.State):
+
+    def execute(self):
+        if algo_st().raw_data is None:
+            return
+        algo_st().biimg = graph.BinaryImage(algo_st().raw_data, 0)
+        tRec().stamp("Threshold Curve")
+
+    def get_next(self):
+        if algo_st().raw_data is None:
+            return None
+        return BoundaryCurveState()
+
+class BoundaryCurveState(st.State):
+
+    def execute(self):
+        algo_st().boundary = graph.get_curve_edge_vertices(algo_st().biimg)
+        tRec().stamp("Find Edge")
+
+        peConfig = ma.get_vorgraph_config(get_size())
+        peConfig.pointConfig.edge_color = "red"
+        ds.Display.current().draw_layer(graph.Graph(algo_st().boundary, [], []), peConfig, ds.boundary)
+
+        ds.Display.current().draw_layer_string(graph.Graph(algo_st().boundary, [], []), peConfig, "boundary") #TEST
+
+        tRec().stamp("Draw Boundary")
+
+    def get_next(self):
+        return VorState()
 
 class BoundaryState(st.State):
 
@@ -74,11 +118,11 @@ class BoundaryState(st.State):
         peConfig = ma.get_vorgraph_config(get_size())
         peConfig.pointConfig.edge_color = "red"
         ds.Display.current().draw_layer(graph.Graph(algo_st().boundary, [], []), peConfig, ds.boundary)
+
         tRec().stamp("Draw Boundary")
 
     def get_next(self):
         return VorState()
-
 
 class VorState(st.State):
 
@@ -89,15 +133,22 @@ class VorState(st.State):
     def get_next(self):
         return PruneState()
 
-
 class PruneState(st.State):
 
     def execute(self):
+
+        print("Original Vor graph has " + str(len(algo_st().vor.graph.points))+"points")
+        print("Original Vor graph has " + str(len(algo_st().vor.graph.edgeIndex))+"edges")
+
         algo_st().graph = graph.graph_in_image(algo_st().vor.graph, algo_st().biimg)
         tRec().stamp("Prune Voronoi")
 
+        print("New Vor graph has " + str(len(algo_st().graph.points)) + "points")
+        print("New Vor graph has " + str(len(algo_st().graph.edgeIndex)) + "edges")
+
         peConfig = ma.get_vorgraph_config(get_size())
         ds.Display.current().draw_layer(algo_st().vor.graph, peConfig, ds.internalVoronoi)
+        #ds.Display.current().draw_layer_string(algo_st().vor.graph, peConfig, "internalVoronoi") #TEST
         tRec().stamp("Draw Prune Voronoi")
 
     def get_next(self):

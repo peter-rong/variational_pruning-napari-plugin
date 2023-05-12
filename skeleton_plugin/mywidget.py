@@ -6,7 +6,7 @@ Created on Mon Feb 14 15:32:30 2022
 """
 import napari
 # import sys
-from qtpy.QtWidgets import QWidget, QCheckBox, QPushButton, QSlider, QLabel, QVBoxLayout, QFileDialog
+from qtpy.QtWidgets import QWidget, QCheckBox, QPushButton, QSlider, QLabel, QVBoxLayout, QFileDialog, QLineEdit
 from PyQt5.QtCore import Qt
 from .display import Display
 from . import mainalgo
@@ -63,15 +63,26 @@ class MainWidget(QWidget):
 
         self.biSlider.valueChanged.connect(self.set_bi_thr)
         self.biSlider.sliderReleased.connect(self.set_bithr_lift)
-        self.biSlider.move(0, 40)
-        self.biSText.move(100, 40)
+        self.biSlider.move(0, 50)
+        self.biSText.move(100, 50)
         self.biSText.setText("Binary: " + str(self.biSlider.value()) +"%")
+
+        #load curve
+
+        self.loadCurveButton = QPushButton(self)
+        self.loadCurveButton.setText("Load Curve")
+        self.loadCurveButton.clicked.connect(MainWidget.load_curve) #TODO
+        self.loadCurveButton.move(0,80)
+
+        self.fairingLabel = QLabel("fairing",self)
+        self.fairingLabel.move(0, 125)
+        self.fairingInputbox = QLineEdit(self)
+        self.fairingInputbox.setGeometry(60, 120, 30, 30)
 
         #va
 
-        self.valabel = QPushButton(self)
-        self.valabel.setText("VA")
-        self.valabel.move(10, 80)
+        self.valabel = QLabel("VA",self)
+        self.valabel.move(10, 163)
 
         self.va_color_button = QPushButton(self)
         self.va_color_button.setText("Color")
@@ -81,25 +92,24 @@ class MainWidget(QWidget):
         self.va_graph_button.setText("Prune")
         self.va_graph_button.clicked.connect(MainWidget.va_prune)
 
-        self.va_color_button.move(60,80)
-        self.va_graph_button.move(120,80)
+        self.va_color_button.move(60,160)
+        self.va_graph_button.move(120,160)
 
         s, t = self.__make_slider_label()
         self.vaSlider = s
         self.vaSText = t
 
-        self.vaSlider.setRange(0,110)
+        self.vaSlider.setRange(0,100)
 
         self.vaSlider.valueChanged.connect(self.set_va_thr)
         self.vaSlider.sliderReleased.connect(self.set_vathr_lift)
-        self.vaSlider.move(0, 140)
-        self.vaSText.move(100, 140)
+        self.vaSlider.move(0, 220)
+        self.vaSText.move(100, 220)
         self.vaSText.setText("Alpha: " + str(self.vaSlider.value()) + "degree")
 
         #et
-        self.etlabel = QPushButton(self)
-        self.etlabel.setText("ET")
-        self.etlabel.move(10, 200)
+        self.etlabel = QLabel("ET",self)
+        self.etlabel.move(10, 283)
 
         self.et_color_button = QPushButton(self)
         self.et_color_button.setText("Color")
@@ -109,8 +119,8 @@ class MainWidget(QWidget):
         self.et_graph_button.setText("Prune")
         self.et_graph_button.clicked.connect(MainWidget.et_prune)
 
-        self.et_color_button.move(60, 200)
-        self.et_graph_button.move(120, 200)
+        self.et_color_button.move(60, 280)
+        self.et_graph_button.move(120, 280)
 
         s, t = self.__make_slider_label()
         self.etSlider = s
@@ -120,8 +130,8 @@ class MainWidget(QWidget):
 
         self.etSlider.valueChanged.connect(self.set_et_thr)
         self.etSlider.sliderReleased.connect(self.set_etthr_lift)
-        self.etSlider.move(0, 260)
-        self.etSText.move(100, 260)
+        self.etSlider.move(0, 340)
+        self.etSText.move(100, 340)
         self.etSText.setText("Threshold: " + str(self.etSlider.value()) + "%")
 
         WidgetManager.inst().add(self)
@@ -129,6 +139,10 @@ class MainWidget(QWidget):
     def run():
         WidgetManager.inst().start()
         mainalgo.SkeletonApp.inst().run()
+
+    def load_curve():
+        WidgetManager.inst().start()
+        mainalgo.SkeletonApp.inst().load_curve() #TODO
 
     def va_color():
         mainalgo.SkeletonApp.inst().va_color()

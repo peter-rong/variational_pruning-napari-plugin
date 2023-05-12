@@ -79,7 +79,7 @@ class Graph:
         self.edgeIndex_include = [True] * len(edge)
 
     def duplicate(self):
-        new_graph = Graph(self.points,self.edgeIndex)
+        new_graph = Graph(self.points, self.edgeIndex)
         return new_graph
 
     def get_cord_as_tuples(self):
@@ -215,17 +215,21 @@ def get_edge_vertices(img: BinaryImage):
     idcomp = np.transpose(np.array([ids[0], ids[1]]))
     return idcomp + [-0.5, -0.5]
 
+def get_curve_edge_vertices(img: BinaryImage):
+    black_indices = np.where(img.data == 0)
+    black_points = np.transpose(np.array(black_indices))
+    return black_points
+
 
 def get_voronoi(points: list) -> VoronoiDiagram:
     return VoronoiDiagram(points)
 
 
 def prune_graph_from_edge(graph: Graph, threshold_list, dynamic_threshold) -> Graph:
-
     new_points = graph.points
     new_edges = list()
 
-    index = len(threshold_list) -1
+    index = len(threshold_list) - 1
 
     for i in range(len(threshold_list)):
         if threshold_list[i] > dynamic_threshold:
@@ -305,6 +309,7 @@ def get_closest_dists(pids: list, vor: VoronoiDiagram) -> list:
     '''
     return result
 
+
 def get_angle(eids: list, vor: VoronoiDiagram) -> list:
     result = [vor.edge_angle(eid) for eid in eids]
     return result
@@ -323,13 +328,13 @@ def get_color_list(dist: list) -> list:
     '''
     return [cl.to_hex(c) for c in clist]
 
-def get_edge_weighted_color_list(dist: list, edges: list) -> list:
 
+def get_edge_weighted_color_list(dist: list, edges: list) -> list:
     avg = list()
     for e in edges:
         x = e[0]
         y = e[1]
-        avg.append((dist[x] + dist[y])/2)
+        avg.append((dist[x] + dist[y]) / 2)
 
     data = np.array(avg)
     norm = (data - np.min(data)) / (np.max(data) - np.min(data))

@@ -60,14 +60,23 @@ class SkeletonApp:
     def run(self):
         self.timer.clear()
         self.timer.stamp("Start")
-        if not self.hasSolution:
-            print("No solution yet")
-        else:
-            print("has solution")
+        self.hasSolution = False
+
         self.stm.change_state(aps.ReadState())
 
         self.__runall()
-        self.hasSolution = True  # TODO put this somewhere in the appstates
+        self.hasSolution = True
+
+        self.timer.print_records()
+
+    def load_curve(self):
+        self.timer.clear()
+        self.timer.stamp("Start loading curve")
+        self.hasSolution = False
+
+        self.stm.change_state(aps.ReadCurveState())
+        self.__runall()
+        self.hasSolution = True
 
         self.timer.print_records()
 
