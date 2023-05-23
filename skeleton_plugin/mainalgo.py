@@ -18,6 +18,7 @@ from . import appstates as aps
 class AlgoStatus:
 
     def __init__(self):
+        self.curveGraph = None
         self.raw_data = None
         self.biimg = None
         self.boundary = None
@@ -35,7 +36,10 @@ class AppStatus:
         self.vaThresh = 0
         self.shape = None
 
+
 class SkeletonApp:
+    drawMode = None
+
     __current = None
     hasSolution = False
     graph = None
@@ -43,6 +47,8 @@ class SkeletonApp:
     dynamic_graph = None
     threshold_list = None
     color_list = None
+
+    output = None
 
     def __init__(self):
         self.algoStatus = AlgoStatus()
@@ -56,11 +62,17 @@ class SkeletonApp:
             SkeletonApp.__current = SkeletonApp()
         return SkeletonApp.__current
 
-
     def run(self):
         self.timer.clear()
         self.timer.stamp("Start")
         self.hasSolution = False
+        self.drawMode = None
+        self.graph = None
+        self.ets = None
+        self.dynamic_graph = None
+        self.threshold_list = None
+        self.color_list = None
+        self.output = None
 
         self.stm.change_state(aps.ReadState())
 
@@ -69,7 +81,67 @@ class SkeletonApp:
 
         self.timer.print_records()
 
-    def load_curve(self):
+    def file_to_graph(self, filename, fairing_count):
+
+        file = open(filename, 'r')
+        lines = file.readlines()
+        node_count = int(lines[0])
+        points = []
+
+        for i in range(1, node_count + 1):
+            line = lines[i]
+            p1, p2 = float(line.split()[0]), float(line.split()[1])
+            points.append([p1, p2])
+
+        edge_ids = []
+
+        for j in range(node_count + 2, len(lines)):
+            line = lines[j]
+            id1, id2 = int(line.split()[0]), int(line.split()[1])
+            edge_ids.append([id1, id2])
+
+        #fairing
+        while fairing_count > 0:
+            new_points = list()
+
+            for i in range(0,len(points)):
+                new_points.append([0,0])
+
+            for edge in edge_ids:
+                p1, p2 = edge[0], edge[1]
+
+                new_points[p1][0] += (points[p2][0]/2.0)
+                new_points[p1][1] += (points[p2][1]/2.0)
+
+                new_points[p2][0] += (points[p1][0]/2.0)
+                new_points[p2][1] += (points[p1][1]/2.0)
+
+            points = new_points
+            fairing_count -= 1
+
+        curve_graph = graph.Graph(points, edge_ids)
+
+        return curve_graph
+
+    def load_curve(self, filename, fairing_count):
+
+        curve_graph = self.file_to_graph(filename, fairing_count)
+
+        peConfig = get_vorgraph_config(0.5)
+        peConfig.pointConfig.edge_color = "red"
+
+        self.algoStatus.curveGraph = curve_graph
+
+        display.Display.current().draw_edge_layer(curve_graph, peConfig, "curve")
+
+        self.stm.change_state(aps.CurveVorState())
+
+        while self.stm.valid():
+            self.stm.execute()
+            self.stm.to_next()
+        self.timer.print_records()
+
+        '''
         self.timer.clear()
         self.timer.stamp("Start loading curve")
         self.hasSolution = False
@@ -79,12 +151,15 @@ class SkeletonApp:
         self.hasSolution = True
 
         self.timer.print_records()
+        '''
 
     def va_color(self):
         if not self.hasSolution:
             print("No solution yet, cannot draw graph")
 
         else:
+            SkeletonApp.drawMode = 'va_color'
+
             self.stm.change_state(aps.VaColorState())
             self.stm.execute()
             self.timer.print_records()
@@ -94,16 +169,20 @@ class SkeletonApp:
             print("No solution yet, cannot draw graph")
 
         else:
+            SkeletonApp.drawMode = 'va_prune'
+
             self.stm.change_state(aps.VaPruneState())
             self.stm.execute()
             self.timer.print_records()
-
 
     def et_color(self):
         if not self.hasSolution:
             print("No solution yet, cannot draw graph")
 
         else:
+
+            SkeletonApp.drawMode = 'et_color'
+
             self.stm.change_state(aps.EtColorState())
             self.stm.execute()
             self.timer.print_records()
@@ -113,23 +192,71 @@ class SkeletonApp:
             print("No solution yet, cannot draw graph")
 
         else:
+
+            SkeletonApp.drawMode = 'et_prune'
+
             self.stm.change_state(aps.EtPruneState())
             self.stm.execute()
             self.timer.print_records()
 
+    def va_export(self):
+
+        if not self.hasSolution:
+            print("No solution yet, cannot export")
+            return
+        if SkeletonApp.drawMode == 'et_prune' or SkeletonApp.drawMode == 'et_color':
+            print("You are trying to export for VA while the current solution is for ET")
+            return
+
+        if self.output is not None:
+            f = open("va_output.txt", "w")
+            f.write(self.output)
+
+            f.close()
+
+    def et_export(self):
+
+        if not self.hasSolution:
+            print("No solution yet, cannot export")
+            return
+        if SkeletonApp.drawMode == 'va_prune' or SkeletonApp.drawMode == 'va_color':
+            print("You are trying to export for ET while the current solution is for VA")
+            return
+
+        if self.output is not None:
+            f = open("et_output.txt", "w")
+            f.write(self.output)
+
+            f.close()
+
     def reset_vathresh(self, newT: float):
         self.appStatus.vaThresh = newT
+
+        if SkeletonApp.drawMode == 'va_color':
+            self.va_color()
+
+        elif SkeletonApp.drawMode == 'va_prune':
+            self.va_prune()
 
     def reset_etthresh(self, newT: float):
         self.appStatus.etThresh = newT
 
+        if SkeletonApp.drawMode == 'et_color':
+            self.et_color()
+
+        elif SkeletonApp.drawMode == 'et_prune':
+            self.et_prune()
+
     def reset_bithresh(self, newT: float):
         self.appStatus.biThresh = newT
+
+        self.run()
 
     def __runall(self):
         while self.stm.valid():
             self.stm.execute()
             self.stm.to_next()
+
 
 def run():
     # ta.test_boundary_edge([]);
@@ -273,6 +400,7 @@ def get_thickness_config(size: float) -> drawing.PointEdgeConfig:
 
     return peConfig
 
+
 def get_angle_config(size: float) -> drawing.PointEdgeConfig:
     pConfig = drawing.default_config()
     eConfig = drawing.default_config()
@@ -289,6 +417,7 @@ def get_angle_config(size: float) -> drawing.PointEdgeConfig:
     peConfig.edgeConfig.edge_color = "orange"
 
     return peConfig
+
 
 def get_erosion_config(size: float) -> drawing.PointEdgeConfig:
     pConfig = drawing.default_config()
@@ -307,6 +436,7 @@ def get_erosion_config(size: float) -> drawing.PointEdgeConfig:
 
     return peConfig
 
+
 def get_dynamicGraph_config(size: float) -> drawing.PointEdgeConfig:
     pConfig = drawing.default_config()
     eConfig = drawing.default_config()
@@ -323,6 +453,7 @@ def get_dynamicGraph_config(size: float) -> drawing.PointEdgeConfig:
     peConfig.edgeConfig.edge_color = "green"
 
     return peConfig
+
 
 def get_dynamic_config(size: float) -> drawing.PointEdgeConfig:
     pConfig = drawing.default_config()

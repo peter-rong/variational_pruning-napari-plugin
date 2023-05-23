@@ -16,6 +16,7 @@ from . import treealgorithm
 import numpy as np
 import copy
 
+
 def algo_st():
     return ma.SkeletonApp.inst().algoStatus
 
@@ -29,6 +30,7 @@ def tRec():
 
 
 def get_size() -> float:
+
     refer = 128
     x, y, c = app_st().shape
     m = float(max([x, y, c]))
@@ -40,6 +42,9 @@ class ReadState(st.State):
     def execute(self):
         algo_st().raw_data = self.__read_data()
         app_st().shape = algo_st().raw_data.shape
+        print("shape is: ")
+        print(app_st().shape)
+
         tRec().stamp("Read Data")
 
     def get_next(self):
@@ -56,7 +61,7 @@ class ThreshState(st.State):
     def execute(self):
         if algo_st().raw_data is None:
             return
-        algo_st().biimg = graph.BinaryImage(algo_st().raw_data, int(app_st().biThresh / 100.0 * 255))
+        algo_st().biimg = graph.BinaryImage(algo_st().raw_data, int(app_st().biThresh))
         tRec().stamp("Threshold")
 
     def get_next(self):
@@ -64,50 +69,6 @@ class ThreshState(st.State):
             return None
         return BoundaryState()
 
-class ReadCurveState(st.State):
-
-    def execute(self):
-        algo_st().raw_data = self.__read_data()
-        app_st().shape = algo_st().raw_data.shape
-        tRec().stamp("Read Curve Data")
-
-    def get_next(self):
-        return ThreshCurveState()
-
-    def __read_data(self):
-        viewer = ds.Display.current().viewer
-        layer = viewer.layers[0]
-        return layer.data_raw
-
-class ThreshCurveState(st.State):
-
-    def execute(self):
-        if algo_st().raw_data is None:
-            return
-        algo_st().biimg = graph.BinaryImage(algo_st().raw_data, 0)
-        tRec().stamp("Threshold Curve")
-
-    def get_next(self):
-        if algo_st().raw_data is None:
-            return None
-        return BoundaryCurveState()
-
-class BoundaryCurveState(st.State):
-
-    def execute(self):
-        algo_st().boundary = graph.get_curve_edge_vertices(algo_st().biimg)
-        tRec().stamp("Find Edge")
-
-        peConfig = ma.get_vorgraph_config(get_size())
-        peConfig.pointConfig.edge_color = "red"
-        ds.Display.current().draw_layer(graph.Graph(algo_st().boundary, [], []), peConfig, ds.boundary)
-
-        ds.Display.current().draw_layer_string(graph.Graph(algo_st().boundary, [], []), peConfig, "boundary") #TEST
-
-        tRec().stamp("Draw Boundary")
-
-    def get_next(self):
-        return VorState()
 
 class BoundaryState(st.State):
 
@@ -124,6 +85,7 @@ class BoundaryState(st.State):
     def get_next(self):
         return VorState()
 
+
 class VorState(st.State):
 
     def execute(self):
@@ -133,22 +95,58 @@ class VorState(st.State):
     def get_next(self):
         return PruneState()
 
-class PruneState(st.State):
+
+class CurveVorState(st.State):
+    def execute(self):
+
+        max_x = -math.inf
+        min_x = math.inf
+        max_y = -math.inf
+        min_y = math.inf
+
+        for p in algo_st().curveGraph.points:
+            max_x = max(p[0], max_x)
+            min_x = min(p[0], min_x)
+            max_y = max(p[1], max_y)
+            min_y = min(p[1], min_y)
+
+        app_st().shape = (max_x - min_x, max_y-min_y, 3)
+
+        algo_st().vor = graph.get_voronoi(algo_st().curveGraph.points)
+        peConfig = ma.get_vorgraph_config(get_size())
+        peConfig.edgeConfig.face_color = 'red'
+        peConfig.edgeConfig.edge_color = 'red'
+
+        ds.Display.current().draw_layer_string(algo_st().vor.graph, peConfig, "Voronoi")
+        tRec().stamp("Voronoi")
+
+    def get_next(self):
+        return CurvePruneState()
+
+class CurvePruneState(st.State):
 
     def execute(self):
 
-        print("Original Vor graph has " + str(len(algo_st().vor.graph.points))+"points")
-        print("Original Vor graph has " + str(len(algo_st().vor.graph.edgeIndex))+"edges")
+        algo_st().graph = graph.graph_in_curve(algo_st().vor.graph, algo_st().curveGraph) #TODO
+        tRec().stamp("Prune (curve) Voronoi")
 
+        peConfig = ma.get_vorgraph_config(get_size())
+
+        ds.Display.current().draw_layer_string(algo_st().graph, peConfig, "internalVoronoi") #TEST
+
+    def get_next(self):
+        return BTState()
+
+
+class PruneState(st.State):
+
+    def execute(self):
         algo_st().graph = graph.graph_in_image(algo_st().vor.graph, algo_st().biimg)
         tRec().stamp("Prune Voronoi")
 
-        print("New Vor graph has " + str(len(algo_st().graph.points)) + "points")
-        print("New Vor graph has " + str(len(algo_st().graph.edgeIndex)) + "edges")
-
         peConfig = ma.get_vorgraph_config(get_size())
         ds.Display.current().draw_layer(algo_st().vor.graph, peConfig, ds.internalVoronoi)
-        #ds.Display.current().draw_layer_string(algo_st().vor.graph, peConfig, "internalVoronoi") #TEST
+        # ds.Display.current().draw_layer_string(algo_st().vor.graph, peConfig, "internalVoronoi") #TEST
         tRec().stamp("Draw Prune Voronoi")
 
     def get_next(self):
@@ -209,6 +207,7 @@ class ExecuteState(st.State):
 
         tRec().stamp("End ExecuteState")
 
+
 class EtColorState(st.State):
 
     def execute(self):
@@ -221,10 +220,27 @@ class EtColorState(st.State):
 
             peConfig.edgeConfig.edge_color = graph.get_edge_weighted_color_list(ets, Etgraph.edgeIndex)
 
-            ds.Display.current().removeall()
+            # get result
+            resulting_text = ''
+            node_count, edge_count = len(Etgraph.points), len(Etgraph.edgeIndex)
+            resulting_text += str(node_count) + '\n'
 
+            for i in range(len(Etgraph.points)):
+                resulting_text += str(Etgraph.points[i][0]) + ' ' \
+                                  + str(Etgraph.points[i][1]) + ' ' + str(ets[i]) + '\n'
+
+            resulting_text += str(edge_count) + '\n'
+
+            for edge in Etgraph.edgeIndex:
+                resulting_text += str(edge[0]) + ' ' + str(edge[1]) + '\n'
+
+            ma.SkeletonApp.inst().output = resulting_text
+
+            ds.Display.current().removeall()
+            print("im here")
             ds.Display.current().draw_edge_layer(Etgraph, peConfig, "ET_color")
             tRec().stamp("Et Color State Draw")
+
 
 class EtPruneState(st.State):
 
@@ -238,9 +254,9 @@ class EtPruneState(st.State):
             for e in Etgraph.edgeIndex:
                 x = e[0]
                 y = e[1]
-                curr_max = max(curr_max,(ets[x] + ets[y]) / 2)
+                curr_max = max(curr_max, (ets[x] + ets[y]) / 2)
 
-            et_threshold = curr_max* app_st().etThresh / 100.0
+            et_threshold = curr_max * app_st().etThresh / 100.0
 
             peConfig = ma.get_dynamicGraph_config(get_size())
 
@@ -249,10 +265,41 @@ class EtPruneState(st.State):
 
             peConfig.edgeConfig.edge_color = 'green'
 
+            point_in_solution = [0] * len(Etgraph.points)
+
+            for i in range(len(ets)):
+                if ets[i] >= et_threshold:
+                    point_in_solution[i] = 1
+
+            node_count = sum(point_in_solution)
+            edge_count = 0
+
+            for edge in Etgraph.edgeIndex:
+                if point_in_solution[edge[0]] == 1 and point_in_solution[edge[1]] == 1:
+                    edge_count += 1
+
+            # get result
+            resulting_text = ''
+            resulting_text += str(node_count) + '\n'
+
+            for i in range(len(Etgraph.points)):
+                if point_in_solution[i] == 1:
+                    resulting_text += str(Etgraph.points[i][0]) + ' ' \
+                                      + str(Etgraph.points[i][1]) + ' ' + str(ets[i]) + '\n'
+
+            resulting_text += str(edge_count) + '\n'
+
+            for edge in Etgraph.edgeIndex:
+                if point_in_solution[edge[0]] == 1 and point_in_solution[edge[1]] == 1:
+                    resulting_text += str(edge[0]) + ' ' + str(edge[1]) + '\n'
+
+            ma.SkeletonApp.inst().output = resulting_text
+            print("im here")
             ds.Display.current().removeall()
 
             ds.Display.current().draw_edge_layer(Et_result_graph, peConfig, "ET_prune")
             tRec().stamp("Et prune State Draw")
+
 
 class VaColorState(st.State):
     def execute(self):
@@ -267,10 +314,29 @@ class VaColorState(st.State):
             dynamicConfig = ma.get_dynamicGraph_config(get_size())
             dynamicConfig.edgeConfig.edge_color = color_list
 
+            # get result
+            resulting_text = ''
+            node_count, edge_count = len(dynamic_graph.points), len(dynamic_graph.edgeIndex)
+            resulting_text += str(node_count) + '\n'
+
+            for i in range(len(dynamic_graph.points)):
+                resulting_text += str(dynamic_graph.points[i][0]) + ' ' \
+                                  + str(dynamic_graph.points[i][1]) + '\n'
+
+            resulting_text += str(edge_count) + '\n'
+
+            for i in range(len(dynamic_graph.edgeIndex)):
+                edge = dynamic_graph.edgeIndex[i]
+                resulting_text += str(edge[0]) + ' ' + str(edge[1]) \
+                                  + ' ' + str(threshold_list[i]) + '\n'
+
+            ma.SkeletonApp.inst().output = resulting_text
+
             ds.Display.current().removeall()
 
             ds.Display.current().draw_edge_layer(dynamic_graph, dynamicConfig, "VA_color")
             tRec().stamp("Va Color State Draw")
+
 
 class VaPruneState(st.State):
     def execute(self):
@@ -287,11 +353,45 @@ class VaPruneState(st.State):
             dynamic_result_graph = graph.prune_graph_from_edge(dynamic_graph, threshold_list, dynamic_threshold)
             dynamicConfig = ma.get_dynamicGraph_config(get_size())
 
+            point_in_solution = [0] * len(dynamic_graph.points)
+            edge_count = 0
+
+            for i in range(len(threshold_list)):
+                if threshold_list[i] >= dynamic_threshold:
+                    index1, index2 = dynamic_graph.edgeIndex[i][0], dynamic_graph.edgeIndex[i][1]
+
+                    point_in_solution[index1] = 1
+                    point_in_solution[index2] = 1
+                    edge_count += 1
+
+            node_count = sum(point_in_solution)
+
+            # get result
+            resulting_text = ''
+
+            resulting_text += str(node_count) + '\n'
+
+            for i in range(len(dynamic_graph.points)):
+
+                if point_in_solution[i] == 1:
+                    resulting_text += str(dynamic_graph.points[i][0]) + ' ' \
+                                      + str(dynamic_graph.points[i][1]) + '\n'
+
+            resulting_text += str(edge_count) + '\n'
+
+            for i in range(len(dynamic_graph.edgeIndex)):
+                if threshold_list[i] >= dynamic_threshold:
+                    edge = dynamic_graph.edgeIndex[i]
+                    resulting_text += str(edge[0]) + ' ' + str(edge[1]) + str(threshold_list[i]) + '\n'
+
+            ma.SkeletonApp.inst().output = resulting_text
+
             ds.Display.current().removeall()
 
             ds.Display.current().draw_edge_layer(dynamic_result_graph, dynamicConfig, "VA_prune")
 
             tRec().stamp("Va Prune State Draw")
+
 
 class ResponseState(st.State):
     def execute(self):
@@ -299,7 +399,7 @@ class ResponseState(st.State):
             return
         tRec().stamp("start of response state")
 
-        #naive thickness
+        # naive thickness
         thickness_graph = algo_st().algo.graph.duplicate()
         thickness_npGraph = algo_st().algo.npGraph.duplicate()
 
@@ -311,7 +411,7 @@ class ResponseState(st.State):
         ds.Display.current().draw_layer(thickness_graph, thicknessConfig, ds.thickness)
         tRec().stamp("Draw Naive Thickness")
 
-        #naive angle
+        # naive angle
         angle_graph = algo_st().algo.graph.duplicate()
         angle_npGraph = algo_st().algo.npGraph.duplicate()
         angles = graph.get_angle(algo_st().graph.edge_ids, algo_st().vor)
@@ -326,12 +426,12 @@ class ResponseState(st.State):
         ds.Display.current().draw_layer(angle_graph, angleConfig, ds.angle)
         tRec().stamp("Draw Naive angle")
 
-        #ET
+        # ET
         et_graph = algo_st().algo.graph.duplicate()
         et_npGraph = algo_st().algo.npGraph.duplicate()
 
         et_prune_algo = ETPruningAlgo(et_graph, et_npGraph)
-        et_threshold = app_st().erosionThresh / 100.0 *  max(et_npGraph.get_ets())
+        et_threshold = app_st().erosionThresh / 100.0 * max(et_npGraph.get_ets())
         et_graph = et_prune_algo.prune(et_threshold)
 
         erosionConfig = ma.get_erosion_config(get_size())
@@ -339,7 +439,7 @@ class ResponseState(st.State):
         ds.Display.current().draw_layer(et_graph, erosionConfig, ds.erosionT)
         tRec().stamp("Draw Erosion Thickness")
 
-        #dynamic
+        # dynamic
 
         dynamic_graph = algo_st().algo.graph.duplicate()
         dynamic_npGraph = algo_st().algo.npGraph.duplicate()
@@ -348,7 +448,7 @@ class ResponseState(st.State):
         dynamic_npGraph.set_angles(angles)
         dynamic_prune_algo = AnglePruningAlgo(dynamic_graph, dynamic_npGraph)
 
-        dynamic_threshold = app_st().dynamicThresh/ 100.0
+        dynamic_threshold = app_st().dynamicThresh / 100.0
 
         if not ma.SkeletonApp.inst().hasSolution:
             dynamic_tree, dynamic_reward_list, dynamic_alpha_list = dynamic_prune_algo.dynamic_prune(
@@ -380,11 +480,9 @@ class AngleState(st.State):
         if algo_st().algo is None:
             return
 
-
         angles = graph.get_angle(algo_st().graph.edge_ids, algo_st().vor)
         # print(angles)
         algo_st().algo.npGraph.set_angles(angles)
-
 
         tRec().stamp("calc angles")
 
@@ -446,7 +544,7 @@ class AnglePruneState(st.State):
         dynamic_graph_with_threshold, dynamic_graph_thresh, dynamic_color_list_with_threshold = prune_algo.dynamic_to_graph_with_color()
         tRec().stamp("compute dynamic tree list")
 
-        dynamicConfig.edgeConfig.face_color = dynamic_color_list_with_threshold # testing
+        dynamicConfig.edgeConfig.face_color = dynamic_color_list_with_threshold  # testing
         dynamicConfig.edgeConfig.edge_color = dynamic_color_list_with_threshold
 
         ds.Display.current().draw_layer(dynamic_graph_with_threshold, dynamicConfig, ds.dynamic)
@@ -501,5 +599,3 @@ class AnglePruneState(st.State):
         # skeleton_result_peConfig = ma.get_skeleton_result_config(get_size())
         # ds.Display.current().draw_layer(skeleton_result_graph, skeleton_result_peConfig, ds.skeletonResult)
         # tRec().stamp("draw_skeleton_result")
-
-

@@ -123,15 +123,15 @@ def cluster_to_skeleton(graph: Graph, original_graph):
         elif path.clusterEdgeIndex == None:
             point_index = path.clusterPointIndex
             if point_include[point_index] == False:
-                path.inSol == False
-                path.one.inSol == False
-                path.other.inSol == False
+                path.inSol = False
+                path.one.inSol = False
+                path.other.inSol = False
         elif path.clusterPointIndex == None:
             edge_index = path.clusterEdgeIndex
             if edge_include[edge_index] == False:
-                path.inSol == False
-                path.one.inSol == False
-                path.other.inSol == False
+                path.inSol = False
+                path.one.inSol = False
+                path.other.inSol = False
 
     return original_graph
 
@@ -267,10 +267,35 @@ def prune_graph(graph: Graph, flags: list) -> Graph:
 
     return Graph(new_points, new_edges, new_ids, edge_ids)
 
-
 '''
 pruned graph
 '''
+
+def is_left(start, end, point):
+    return (end[0] - start[0]) * (point[1] - start[1]) - (point[0] - start[0]) * (end[1] - start[1])
+def graph_in_curve(vor: Graph, curveGraph: Graph) -> Graph:
+    flags = [0] * len(vor.points)
+
+    for i in range(len(vor.points)):
+        p = vor.points[i]
+
+        # compute winding number
+        winding_number = 0
+
+        for edge in curveGraph.edgeIndex:
+            p1, p2 = edge[0], edge[1]
+            point1, point2 = curveGraph.points[p1], curveGraph.points[p2]
+
+            if point1[1] <= p[1]:
+                if point2[1] > p[1] and is_left(point1, point2, p) > 0:
+                    winding_number += 1
+            elif point2[1] <= p[1] and is_left(point1, point2, p) < 0:
+                winding_number -= 1
+
+        if winding_number > 0:
+            flags[i] = 1
+
+    return prune_graph(vor, flags)
 
 
 def graph_in_image(vor: Graph, img: BinaryImage) -> Graph:

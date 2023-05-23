@@ -142,11 +142,9 @@ class Display:
         self.show_layer(isShow = self.config.show_pcst_result, layer = pcstResult)
 
     def removeall(self):
-        # todo : remove all layers
         for l in self.layers:
             l.remove()
         self.layers.clear()
-
 
 class EdgeLayer:
 

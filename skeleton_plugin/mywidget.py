@@ -48,6 +48,8 @@ class MainWidget(QWidget):
     def __init__(self, viewer: napari.Viewer, parent=None):
         super().__init__(parent)
 
+        self.curveFile = None
+
         self.name = main_widget
 
         self.runButton = QPushButton(self)
@@ -59,20 +61,25 @@ class MainWidget(QWidget):
         self.biSlider = s
         self.biSText = t
 
-        self.biSlider.setRange(0, 100)
+        self.biSlider.setRange(0, 255)
 
         self.biSlider.valueChanged.connect(self.set_bi_thr)
         self.biSlider.sliderReleased.connect(self.set_bithr_lift)
         self.biSlider.move(0, 50)
         self.biSText.move(100, 50)
-        self.biSText.setText("Binary: " + str(self.biSlider.value()) +"%")
+        self.biSText.setText("Binary: " + str(self.biSlider.value()))
 
         #load curve
 
         self.loadCurveButton = QPushButton(self)
         self.loadCurveButton.setText("Load Curve")
-        self.loadCurveButton.clicked.connect(MainWidget.load_curve) #TODO
+        self.loadCurveButton.clicked.connect(self.load_curve) #TODO
         self.loadCurveButton.move(0,80)
+
+        self.curveDialogButton = QPushButton(self)
+        self.curveDialogButton.setText("Select txt file")
+        self.curveDialogButton.clicked.connect(self.curve_dialog)  # TODO
+        self.curveDialogButton.move(100, 80)
 
         self.fairingLabel = QLabel("fairing",self)
         self.fairingLabel.move(0, 125)
@@ -88,12 +95,17 @@ class MainWidget(QWidget):
         self.va_color_button.setText("Color")
         self.va_color_button.clicked.connect(MainWidget.va_color)
 
-        self.va_graph_button = QPushButton(self)
-        self.va_graph_button.setText("Prune")
-        self.va_graph_button.clicked.connect(MainWidget.va_prune)
+        self.va_prune_button = QPushButton(self)
+        self.va_prune_button.setText("Prune")
+        self.va_prune_button.clicked.connect(MainWidget.va_prune)
+
+        self.va_export_button = QPushButton(self)
+        self.va_export_button.setText("Export")
+        self.va_export_button.clicked.connect(MainWidget.va_export)       #TODO
 
         self.va_color_button.move(60,160)
-        self.va_graph_button.move(120,160)
+        self.va_prune_button.move(120,160)
+        self.va_export_button.move(180,160)
 
         s, t = self.__make_slider_label()
         self.vaSlider = s
@@ -115,12 +127,17 @@ class MainWidget(QWidget):
         self.et_color_button.setText("Color")
         self.et_color_button.clicked.connect(MainWidget.et_color)
 
-        self.et_graph_button = QPushButton(self)
-        self.et_graph_button.setText("Prune")
-        self.et_graph_button.clicked.connect(MainWidget.et_prune)
+        self.et_prune_button = QPushButton(self)
+        self.et_prune_button.setText("Prune")
+        self.et_prune_button.clicked.connect(MainWidget.et_prune)
+
+        self.et_export_button = QPushButton(self)
+        self.et_export_button.setText("Export")
+        self.et_export_button.clicked.connect(MainWidget.et_export)  # TODO
 
         self.et_color_button.move(60, 280)
-        self.et_graph_button.move(120, 280)
+        self.et_prune_button.move(120, 280)
+        self.et_export_button.move(180,280)
 
         s, t = self.__make_slider_label()
         self.etSlider = s
@@ -140,9 +157,24 @@ class MainWidget(QWidget):
         WidgetManager.inst().start()
         mainalgo.SkeletonApp.inst().run()
 
-    def load_curve():
+    def load_curve(self):
         WidgetManager.inst().start()
-        mainalgo.SkeletonApp.inst().load_curve() #TODO
+
+        if self.fairingInputbox.text() == '':
+            mainalgo.SkeletonApp.inst().load_curve(self.curveFile, 0)
+        else:
+            fairingCount = int(self.fairingInputbox.text())
+            mainalgo.SkeletonApp.inst().load_curve(self.curveFile, fairingCount)
+
+    def curve_dialog(self):
+        dialog = QFileDialog()
+        dialog.setWindowTitle("Open New File")
+        dialog.setFileMode(QFileDialog.AnyFile)
+
+        if dialog.exec_() == QFileDialog.Accepted:
+            selected_file = dialog.selectedFiles()[0]
+            self.curveFile = selected_file
+            print(f"Selected file: {selected_file}")
 
     def va_color():
         mainalgo.SkeletonApp.inst().va_color()
@@ -150,8 +182,14 @@ class MainWidget(QWidget):
     def va_prune():
         mainalgo.SkeletonApp.inst().va_prune()
 
+    def va_export():
+        mainalgo.SkeletonApp.inst().va_export()
+
+    def et_export():
+        mainalgo.SkeletonApp.inst().et_export()
+
     def set_bi_thr(self):
-        self.biSText.setText("Binary: " + str(self.biSlider.value()) +"%")
+        self.biSText.setText("Binary: " + str(self.biSlider.value()))
 
     def set_bithr_lift(self):
         mainalgo.SkeletonApp.inst().reset_bithresh(self.biSlider.value())
