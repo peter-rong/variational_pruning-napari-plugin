@@ -117,7 +117,7 @@ class CurveVorState(st.State):
         peConfig.edgeConfig.face_color = 'red'
         peConfig.edgeConfig.edge_color = 'red'
 
-        ds.Display.current().draw_layer_string(algo_st().vor.graph, peConfig, "Voronoi")
+        #ds.Display.current().draw_layer_string(algo_st().vor.graph, peConfig, "Voronoi")
         tRec().stamp("Voronoi")
 
     def get_next(self):
@@ -127,12 +127,12 @@ class CurvePruneState(st.State):
 
     def execute(self):
 
-        algo_st().graph = graph.graph_in_curve(algo_st().vor.graph, algo_st().curveGraph) #TODO
+        algo_st().graph = graph.graph_in_curve(algo_st().vor.graph, algo_st().curveGraph)
         tRec().stamp("Prune (curve) Voronoi")
 
         peConfig = ma.get_vorgraph_config(get_size())
 
-        ds.Display.current().draw_layer_string(algo_st().graph, peConfig, "internalVoronoi") #TEST
+        #ds.Display.current().draw_layer_string(algo_st().graph, peConfig, "internalVoronoi") #TEST
 
     def get_next(self):
         return BTState()
@@ -236,8 +236,7 @@ class EtColorState(st.State):
 
             ma.SkeletonApp.inst().output = resulting_text
 
-            ds.Display.current().removeall()
-            print("im here")
+            ds.Display.current().remove_all_but_canvas()
             ds.Display.current().draw_edge_layer(Etgraph, peConfig, "ET_color")
             tRec().stamp("Et Color State Draw")
 
@@ -294,8 +293,7 @@ class EtPruneState(st.State):
                     resulting_text += str(edge[0]) + ' ' + str(edge[1]) + '\n'
 
             ma.SkeletonApp.inst().output = resulting_text
-            print("im here")
-            ds.Display.current().removeall()
+            ds.Display.current().remove_all_but_canvas()
 
             ds.Display.current().draw_edge_layer(Et_result_graph, peConfig, "ET_prune")
             tRec().stamp("Et prune State Draw")
@@ -332,7 +330,7 @@ class VaColorState(st.State):
 
             ma.SkeletonApp.inst().output = resulting_text
 
-            ds.Display.current().removeall()
+            ds.Display.current().remove_all_but_canvas()
 
             ds.Display.current().draw_edge_layer(dynamic_graph, dynamicConfig, "VA_color")
             tRec().stamp("Va Color State Draw")
@@ -386,7 +384,7 @@ class VaPruneState(st.State):
 
             ma.SkeletonApp.inst().output = resulting_text
 
-            ds.Display.current().removeall()
+            ds.Display.current().remove_all_but_canvas()
 
             ds.Display.current().draw_edge_layer(dynamic_result_graph, dynamicConfig, "VA_prune")
 

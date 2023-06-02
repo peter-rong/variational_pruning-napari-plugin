@@ -132,6 +132,8 @@ class SkeletonApp:
 
         self.algoStatus.curveGraph = curve_graph
 
+        display.Display.current().removeall(self)
+
         display.Display.current().draw_edge_layer(curve_graph, peConfig, "curve")
 
         self.stm.change_state(aps.CurveVorState())

@@ -97,11 +97,19 @@ class Display:
         self.config = con
 
     #method for just drawing edge layer
+
+    def draw_edge_layer_center(self, g: graph.Graph, config: drawing.PointEdgeConfig, name: str):
+
+        edge_layer = EdgeLayer.create(name)
+        edge_layer.draw(g, config)
+        self.layers.append(edge_layer)
+
     def draw_edge_layer(self, g : graph.Graph, config : drawing.PointEdgeConfig, name : str) :
 
-        edge_layer = self.find(name)
-        if edge_layer is None:
-            edge_layer = EdgeLayer.create(name)
+        #edge_layer = self.find(name)
+        #if edge_layer is None:
+
+        edge_layer = EdgeLayer.create(name)
         edge_layer.draw(g,config)
         self.layers.append(edge_layer)
 
@@ -146,6 +154,12 @@ class Display:
             l.remove()
         self.layers.clear()
 
+    def remove_all_but_canvas(self):
+        for l in self.layers:
+            print(l.name)
+            if l.name != "curve":
+                l.remove()
+
 class EdgeLayer:
 
     def __init__(self, name: str, el: napari.layers.Shapes):
@@ -173,7 +187,7 @@ class EdgeLayer:
 
 
         self.edgeLayer.selected_data = set()
-        # self.pointLayer.refresh()
+        self.edgeLayer.refresh()
 
     def create(name: str):
         viewer = Display.current().viewer
