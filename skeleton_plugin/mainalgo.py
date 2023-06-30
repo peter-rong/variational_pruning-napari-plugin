@@ -81,54 +81,12 @@ class SkeletonApp:
 
         self.timer.print_records()
 
-    def file_to_graph(self, filename, fairing_count):
-
-        file = open(filename, 'r')
-        lines = file.readlines()
-        node_count = int(lines[0])
-        points = []
-
-        for i in range(1, node_count + 1):
-            line = lines[i]
-            p1, p2 = float(line.split()[0]), float(line.split()[1])
-            points.append([p1, p2])
-
-        edge_ids = []
-
-        for j in range(node_count + 2, len(lines)):
-            line = lines[j]
-            id1, id2 = int(line.split()[0]), int(line.split()[1])
-            edge_ids.append([id1, id2])
-
-        #fairing
-        while fairing_count > 0:
-            new_points = list()
-
-            for i in range(0,len(points)):
-                new_points.append([0,0])
-
-            for edge in edge_ids:
-                p1, p2 = edge[0], edge[1]
-
-                new_points[p1][0] += (points[p2][0]/2.0)
-                new_points[p1][1] += (points[p2][1]/2.0)
-
-                new_points[p2][0] += (points[p1][0]/2.0)
-                new_points[p2][1] += (points[p1][1]/2.0)
-
-            points = new_points
-            fairing_count -= 1
-
-        curve_graph = graph.Graph(points, edge_ids)
-
-        return curve_graph
-
     def load_curve(self, filename, fairing_count):
 
         background_color = "white"
         display.Display.current().viewer.window.qt_viewer.canvas.bgcolor = background_color
 
-        curve_graph = self.file_to_graph(filename, fairing_count)
+        curve_graph = file_to_graph(filename, fairing_count)
 
         peConfig = get_vorgraph_config(0.5)
         peConfig.pointConfig.edge_color = "red"
@@ -255,12 +213,52 @@ class SkeletonApp:
     def reset_bithresh(self, newT: float):
         self.appStatus.biThresh = newT
 
-        self.run()
-
     def __runall(self):
         while self.stm.valid():
             self.stm.execute()
             self.stm.to_next()
+
+
+def file_to_graph(filename, fairing_count):
+    file = open(filename, 'r')
+    lines = file.readlines()
+    node_count = int(lines[0])
+    points = []
+
+    for i in range(1, node_count + 1):
+        line = lines[i]
+        p1, p2 = float(line.split()[0]), float(line.split()[1])
+        points.append([p1, p2])
+
+    edge_ids = []
+
+    for j in range(node_count + 2, len(lines)):
+        line = lines[j]
+        id1, id2 = int(line.split()[0]), int(line.split()[1])
+        edge_ids.append([id1, id2])
+
+    # fairing
+    while fairing_count > 0:
+        new_points = list()
+
+        for i in range(0, len(points)):
+            new_points.append([0, 0])
+
+        for edge in edge_ids:
+            p1, p2 = edge[0], edge[1]
+
+            new_points[p1][0] += (points[p2][0] / 2.0)
+            new_points[p1][1] += (points[p2][1] / 2.0)
+
+            new_points[p2][0] += (points[p1][0] / 2.0)
+            new_points[p2][1] += (points[p1][1] / 2.0)
+
+        points = new_points
+        fairing_count -= 1
+
+    curve_graph = graph.Graph(points, edge_ids)
+
+    return curve_graph
 
 
 def run():

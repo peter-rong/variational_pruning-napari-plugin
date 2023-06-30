@@ -188,9 +188,6 @@ class MainWidget(QWidget):
         mainalgo.SkeletonApp.inst().run()
 
     def reset(self):
-        self.vaSlider.value = 0
-        self.etSlider.value = 0
-        self.biSlider.value = 0
         self.fairingInputbox.setText('')
 
         self.curveFile = None
@@ -204,12 +201,17 @@ class MainWidget(QWidget):
     def load_image(self):
 
         image_data = imageio.imread(self.imageFile)
+
+        Display.current().viewer.layers.clear()
         Display.current().viewer.add_image(image_data)
         WidgetManager.inst().start()
 
         MainWidget.run()
 
     def image_dialog(self):
+
+        self.curveFile = None
+
         dialog = QFileDialog()
         dialog.setWindowTitle("Open New File")
         dialog.setFileMode(QFileDialog.AnyFile)
@@ -229,6 +231,9 @@ class MainWidget(QWidget):
             mainalgo.SkeletonApp.inst().load_curve(self.curveFile, fairingCount)
 
     def curve_dialog(self):
+
+        self.imageFile = None
+
         dialog = QFileDialog()
         dialog.setWindowTitle("Open New File")
         dialog.setFileMode(QFileDialog.AnyFile)
@@ -255,6 +260,7 @@ class MainWidget(QWidget):
 
     def set_bithr_lift(self):
         mainalgo.SkeletonApp.inst().reset_bithresh(self.biSlider.value())
+        self.load_image()
 
     def set_va_thr(self):
         self.vaSText.setText("VA Threshold: " + str(self.vaSlider.value()) + " degree")
