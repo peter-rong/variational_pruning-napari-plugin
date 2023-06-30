@@ -20,14 +20,14 @@ angle = "angle"
 thickness = "thickness"
 dynamic = "dynamic"
 full_dynamic = "full dynamic"
-pcst = "pcst" #pr
+pcst = "pcst"  # pr
 pcstResult = "pcst result"
 skeletonResult = "skeleton result"
 outputSkeleton = "output skeleton"
 
 
 class DisplayConfig:
-    
+
     def __init__(self):
         self.show_edgepoints = False
         self.show_voronoi = False
@@ -44,8 +44,8 @@ class DisplayConfig:
         self.show_pcst_result = False
         self.show_skeleton_result = False
         self.output_skeleton = False
-    
-    def flag_raise(self, name : str) -> bool:
+
+    def flag_raise(self, name: str) -> bool:
         if name == boundary:
             return self.show_edgepoints
         if name == voronoi:
@@ -77,26 +77,25 @@ class DisplayConfig:
         if name == outputSkeleton:
             return self.output_skeleton
         return False
-        
+
 
 class Display:
-    
     current_display = None
-    
-    def current(): 
+
+    def current():
         if Display.current_display is None:
             Display.current_display = Display(napari.current_viewer())
         return Display.current_display
-    
-    def __init__(self, viewer : napari.Viewer):
+
+    def __init__(self, viewer: napari.Viewer):
         self.viewer = viewer
         self.layers = list()
         self.config = DisplayConfig()
-    
-    def set_config(self, con : DisplayConfig):
+
+    def set_config(self, con: DisplayConfig):
         self.config = con
 
-    #method for just drawing edge layer
+    # method for just drawing edge layer
 
     def draw_edge_layer_center(self, g: graph.Graph, config: drawing.PointEdgeConfig, name: str):
 
@@ -104,50 +103,53 @@ class Display:
         edge_layer.draw(g, config)
         self.layers.append(edge_layer)
 
-    def draw_edge_layer(self, g : graph.Graph, config : drawing.PointEdgeConfig, name : str) :
+    def draw_edge_layer(self, g: graph.Graph, config: drawing.PointEdgeConfig, name: str):
 
-        #edge_layer = self.find(name)
-        #if edge_layer is None:
+        # edge_layer = self.find(name)
+        # if edge_layer is None:
 
         edge_layer = EdgeLayer.create(name)
-        edge_layer.draw(g,config)
+        edge_layer.draw(g, config)
+
         self.layers.append(edge_layer)
 
-    def draw_layer_string(self, g : graph.Graph, config : drawing.PointEdgeConfig, name : str):
+    def draw_layer_string(self, g: graph.Graph, config: drawing.PointEdgeConfig, name: str):
         graph_layer = self.find(name)
         if graph_layer is None:
             graph_layer = GraphLayer.create(name)
-        graph_layer.draw(g,config)
+        graph_layer.draw(g, config)
+
         self.layers.append(graph_layer)
 
-    def draw_layer(self, g : graph.Graph, config : drawing.PointEdgeConfig, name : str) :
+    def draw_layer(self, g: graph.Graph, config: drawing.PointEdgeConfig, name: str):
         if self.config.flag_raise(name):
             graph_layer = self.find(name)
             if graph_layer is None:
                 graph_layer = GraphLayer.create(name)
-            graph_layer.draw(g,config)
+            graph_layer.draw(g, config)
+
             self.layers.append(graph_layer)
-    
-    def find(self, layer : str):
+
+    def find(self, layer: str):
         for l in self.layers:
             if l.name == layer:
                 return l
         return None
-    
-    def show_layer(self, isShow : bool, layer : str):
+
+    def show_layer(self, isShow: bool, layer: str):
         target = self.find(layer)
         if target is not None:
             target.show(isShow)
-    
+
     def reset(self):
-        self.show_layer(isShow = self.config.show_edgepoints, layer = boundary)
-        self.show_layer(isShow = self.config.show_voronoi, layer = voronoi)
-        self.show_layer(isShow = self.config.show_internal_voronoi, layer = internalVoronoi)
-        self.show_layer(isShow = self.config.show_heatmap, layer = heatmap)
-        self.show_layer(isShow = self.config.show_bt, layer = burnTime)
-        self.show_layer(isShow = self.config.show_final, layer = final)
-        self.show_layer(isShow = self.config.show_pcst, layer = pcst)
-        self.show_layer(isShow = self.config.show_pcst_result, layer = pcstResult)
+        self.show_layer(isShow=self.config.show_edgepoints, layer=boundary)
+        self.show_layer(isShow=self.config.show_voronoi, layer=voronoi)
+        self.show_layer(isShow=self.config.show_internal_voronoi, layer=internalVoronoi)
+        self.show_layer(isShow=self.config.show_heatmap, layer=heatmap)
+        self.show_layer(isShow=self.config.show_bt, layer=burnTime)
+        self.show_layer(isShow=self.config.show_final, layer=final)
+        self.show_layer(isShow=self.config.show_pcst, layer=pcst)
+        self.show_layer(isShow=self.config.show_pcst_result, layer=pcstResult)
 
     def removeall(self):
         for l in self.layers:
@@ -159,6 +161,7 @@ class Display:
             print(l.name)
             if l.name != "curve":
                 l.remove()
+
 
 class EdgeLayer:
 
@@ -178,13 +181,12 @@ class EdgeLayer:
         ec = config.edgeConfig
         self.edgeLayer.shape_type = 'line'
         self.edgeLayer.data = g.get_edge_cord()
-        #print('There is a total number of ' + str(g.get_edge_cord.size) +'edges')
-        #self.edgeLayer.edge_width = ec.size
+        # print('There is a total number of ' + str(g.get_edge_cord.size) +'edges')
+        # self.edgeLayer.edge_width = ec.size
 
         if self.edgeLayer.visible:
             self.edgeLayer.edge_color = ec.edge_color
             self.edgeLayer.face_color = ec.face_color
-
 
         self.edgeLayer.selected_data = set()
         self.edgeLayer.refresh()
@@ -200,28 +202,27 @@ class EdgeLayer:
 
 
 class GraphLayer:
-    
-    def __init__(self, name : str, pl : napari.layers.Points, el : napari.layers.Shapes):
+
+    def __init__(self, name: str, pl: napari.layers.Points, el: napari.layers.Shapes):
         self.name = name
         self.pointLayer = pl
         self.edgeLayer = el
-    
-    def show(self, isShow : bool):
+
+    def show(self, isShow: bool):
         self.pointLayer.visible = isShow
         self.edgeLayer.visible = isShow
-    
+
     def remove(self):
         viewer = Display.current().viewer
         if self.pointLayer in viewer.layers:
             viewer.layers.remove(self.pointLayer)
         if self.edgeLayer in viewer.layers:
-            viewer.layers.remove(self.edgeLayer)        
-    
-    def draw(self, g : graph.Graph, config : drawing.PointEdgeConfig):
+            viewer.layers.remove(self.edgeLayer)
+
+    def draw(self, g: graph.Graph, config: drawing.PointEdgeConfig):
         pc = config.pointConfig
         ec = config.edgeConfig
-        
-        
+
         self.pointLayer.data = g.points
         self.pointLayer.size = pc.size
         if self.pointLayer.visible:
@@ -229,17 +230,17 @@ class GraphLayer:
             self.pointLayer.face_color = pc.face_color
             self.pointLayer.edge_color = pc.edge_color
         self.pointLayer.selected_data = set()
-        
+
         self.edgeLayer.shape_type = 'line'
-        self.edgeLayer.data = g.get_edge_cord()       
+        self.edgeLayer.data = g.get_edge_cord()
         self.edgeLayer.edge_width = ec.size
         if self.edgeLayer.visible:
             self.edgeLayer.edge_color = ec.edge_color
             self.edgeLayer.face_color = ec.face_color
         self.edgeLayer.selected_data = set()
-        #self.pointLayer.refresh()
-    
-    def create(name : str):
+        # self.pointLayer.refresh()
+
+    def create(name: str):
         viewer = Display.current().viewer
         '''
         pc = config.pointConfig
@@ -255,10 +256,8 @@ class GraphLayer:
         '''
         pname = name + " : " + "points"
         ename = name + " : " + "edges"
-        pointLayer = napari.layers.Points(name = pname)
-        shapeLayer = napari.layers.Shapes(name = ename)
+        pointLayer = napari.layers.Points(name=pname)
+        shapeLayer = napari.layers.Shapes(name=ename)
         viewer.add_layer(pointLayer)
         viewer.add_layer(shapeLayer)
-        return GraphLayer(name = name, pl = pointLayer, el = shapeLayer)
-
-
+        return GraphLayer(name=name, pl=pointLayer, el=shapeLayer)

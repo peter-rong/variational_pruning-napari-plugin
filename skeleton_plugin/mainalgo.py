@@ -4,6 +4,7 @@ Created on Wed Feb 23 15:11:46 2022
 
 @author: Yigan
 """
+import math
 
 import napari
 from . import graph
@@ -39,7 +40,6 @@ class AppStatus:
 
 class SkeletonApp:
     drawMode = None
-
     __current = None
     hasSolution = False
     graph = None
@@ -125,6 +125,9 @@ class SkeletonApp:
 
     def load_curve(self, filename, fairing_count):
 
+        background_color = "white"
+        display.Display.current().viewer.window.qt_viewer.canvas.bgcolor = background_color
+
         curve_graph = self.file_to_graph(filename, fairing_count)
 
         peConfig = get_vorgraph_config(0.5)
@@ -132,7 +135,7 @@ class SkeletonApp:
 
         self.algoStatus.curveGraph = curve_graph
 
-        display.Display.current().removeall(self)
+        display.Display.current().removeall()
 
         display.Display.current().draw_edge_layer(curve_graph, peConfig, "curve")
 

@@ -6,6 +6,8 @@ Created on Wed Mar  2 15:35:25 2022
 """
 import math
 
+import napari
+
 from . import graph
 from . import statemachine as st
 from . import mainalgo as ma
@@ -63,6 +65,16 @@ class ThreshState(st.State):
             return
         algo_st().biimg = graph.BinaryImage(algo_st().raw_data, int(app_st().biThresh))
         tRec().stamp("Threshold")
+
+        binary_image = algo_st().biimg.data*255
+
+        image_data = binary_image * 255
+
+        ds.Display.current().viewer.layers.clear()
+        ds.Display.current().viewer.add_image(image_data)
+
+        #Display.current().viewer.add_image(image_data)
+
 
     def get_next(self):
         if algo_st().raw_data is None:

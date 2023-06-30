@@ -5,8 +5,9 @@ Created on Mon Feb 14 15:32:30 2022
 @author: Yigan
 """
 import napari
+import imageio
 # import sys
-from qtpy.QtWidgets import QWidget, QCheckBox, QPushButton, QSlider, QLabel, QVBoxLayout, QFileDialog, QLineEdit
+from qtpy.QtWidgets import QWidget, QCheckBox, QPushButton, QSlider, QLabel, QVBoxLayout, QFileDialog, QLineEdit, QFrame
 from PyQt5.QtCore import Qt
 from .display import Display
 from . import mainalgo
@@ -48,14 +49,21 @@ class MainWidget(QWidget):
     def __init__(self, viewer: napari.Viewer, parent=None):
         super().__init__(parent)
 
+        self.imageFile = None
         self.curveFile = None
 
         self.name = main_widget
 
         self.runButton = QPushButton(self)
         self.runButton.setText("Load Image")
-        self.runButton.clicked.connect(MainWidget.run)
-        self.runButton.move(0, 10)
+        #self.runButton.clicked.connect(MainWidget.run)
+        self.runButton.clicked.connect(self.load_image)
+        self.runButton.move(0, 20)
+
+        self.imageDialogButton = QPushButton(self)
+        self.imageDialogButton.setText("Select image file")
+        self.imageDialogButton.clicked.connect(self.image_dialog)  # TODO
+        self.imageDialogButton.move(100, 20)
 
         s, t = self.__make_slider_label()
         self.biSlider = s
@@ -65,31 +73,42 @@ class MainWidget(QWidget):
 
         self.biSlider.valueChanged.connect(self.set_bi_thr)
         self.biSlider.sliderReleased.connect(self.set_bithr_lift)
-        self.biSlider.move(0, 50)
-        self.biSText.move(100, 50)
-        self.biSText.setText("Binary: " + str(self.biSlider.value()))
+        self.biSlider.move(0, 60)
+        self.biSText.move(100, 60)
+        self.biSText.setText("Binary Threshold: " + str(self.biSlider.value()) + "  ")
+
+        self.line_widget_1 = QFrame(self)
+        self.line_widget_1.setFrameShape(QFrame.HLine)
+        self.line_widget_1.setFrameShadow(QFrame.Sunken)
+        self.line_widget_1.setGeometry(0, 90, 220, 1)
+        self.line_widget_1.setStyleSheet("background-color: gray;")
 
         #load curve
 
         self.loadCurveButton = QPushButton(self)
         self.loadCurveButton.setText("Load Curve")
-        self.loadCurveButton.clicked.connect(self.load_curve) #TODO
-        self.loadCurveButton.move(0,80)
+        self.loadCurveButton.clicked.connect(self.load_curve)
+        self.loadCurveButton.move(0,110)
 
         self.curveDialogButton = QPushButton(self)
-        self.curveDialogButton.setText("Select txt file")
-        self.curveDialogButton.clicked.connect(self.curve_dialog)  # TODO
-        self.curveDialogButton.move(100, 80)
+        self.curveDialogButton.setText("Select curve file")
+        self.curveDialogButton.clicked.connect(self.curve_dialog)
+        self.curveDialogButton.move(100, 110)
 
-        self.fairingLabel = QLabel("fairing",self)
-        self.fairingLabel.move(0, 125)
+        self.fairingLabel = QLabel("Fairing number: ",self)
+        self.fairingLabel.move(0, 155)
         self.fairingInputbox = QLineEdit(self)
-        self.fairingInputbox.setGeometry(60, 120, 30, 30)
+        self.fairingInputbox.setGeometry(120, 150, 30, 30)
 
+        self.line_widget_2 = QFrame(self)
+        self.line_widget_2.setFrameShape(QFrame.HLine)
+        self.line_widget_2.setFrameShadow(QFrame.Sunken)
+        self.line_widget_2.setGeometry(0, 190, 220, 1)
+        self.line_widget_2.setStyleSheet("background-color: gray;")
         #va
 
         self.valabel = QLabel("VA",self)
-        self.valabel.move(10, 163)
+        self.valabel.move(10, 203)
 
         self.va_color_button = QPushButton(self)
         self.va_color_button.setText("Color")
@@ -101,27 +120,33 @@ class MainWidget(QWidget):
 
         self.va_export_button = QPushButton(self)
         self.va_export_button.setText("Export")
-        self.va_export_button.clicked.connect(MainWidget.va_export)       #TODO
+        self.va_export_button.clicked.connect(MainWidget.va_export)
 
-        self.va_color_button.move(60,160)
-        self.va_prune_button.move(120,160)
-        self.va_export_button.move(180,160)
+        self.va_color_button.move(60,200)
+        self.va_prune_button.move(120,200)
+        self.va_export_button.move(180,200)
 
         s, t = self.__make_slider_label()
         self.vaSlider = s
         self.vaSText = t
 
-        self.vaSlider.setRange(0,100)
+        self.vaSlider.setRange(0,90)
 
         self.vaSlider.valueChanged.connect(self.set_va_thr)
         self.vaSlider.sliderReleased.connect(self.set_vathr_lift)
-        self.vaSlider.move(0, 220)
-        self.vaSText.move(100, 220)
-        self.vaSText.setText("Alpha: " + str(self.vaSlider.value()) + "degree")
+        self.vaSlider.move(0, 250)
+        self.vaSText.move(100, 250)
+        self.vaSText.setText("VA Threshold: " + str(self.vaSlider.value()) + "degree ")
+
+        self.line_widget_3 = QFrame(self)
+        self.line_widget_3.setFrameShape(QFrame.HLine)
+        self.line_widget_3.setFrameShadow(QFrame.Sunken)
+        self.line_widget_3.setGeometry(0, 275, 220, 1)
+        self.line_widget_3.setStyleSheet("background-color: gray;")
 
         #et
         self.etlabel = QLabel("ET",self)
-        self.etlabel.move(10, 283)
+        self.etlabel.move(10, 303)
 
         self.et_color_button = QPushButton(self)
         self.et_color_button.setText("Color")
@@ -133,11 +158,11 @@ class MainWidget(QWidget):
 
         self.et_export_button = QPushButton(self)
         self.et_export_button.setText("Export")
-        self.et_export_button.clicked.connect(MainWidget.et_export)  # TODO
+        self.et_export_button.clicked.connect(MainWidget.et_export)
 
-        self.et_color_button.move(60, 280)
-        self.et_prune_button.move(120, 280)
-        self.et_export_button.move(180,280)
+        self.et_color_button.move(60, 300)
+        self.et_prune_button.move(120, 300)
+        self.et_export_button.move(180, 300)
 
         s, t = self.__make_slider_label()
         self.etSlider = s
@@ -147,15 +172,52 @@ class MainWidget(QWidget):
 
         self.etSlider.valueChanged.connect(self.set_et_thr)
         self.etSlider.sliderReleased.connect(self.set_etthr_lift)
-        self.etSlider.move(0, 340)
-        self.etSText.move(100, 340)
-        self.etSText.setText("Threshold: " + str(self.etSlider.value()) + "%")
+        self.etSlider.move(0, 350)
+        self.etSText.move(100, 350)
+        self.etSText.setText("ET Threshold: " + str(self.etSlider.value()) + "% ")
+
+        self.reset_button = QPushButton(self)
+        self.reset_button.setText("Reset")
+        self.reset_button.clicked.connect(self.reset) #TODO
+        self.reset_button.move(80, 380)
 
         WidgetManager.inst().add(self)
 
     def run():
         WidgetManager.inst().start()
         mainalgo.SkeletonApp.inst().run()
+
+    def reset(self):
+        self.vaSlider.value = 0
+        self.etSlider.value = 0
+        self.biSlider.value = 0
+        self.fairingInputbox.setText('')
+
+        self.curveFile = None
+        self.imageFile = None
+
+        mainalgo.SkeletonApp.hasSolution = False
+
+        Display.current().removeall()
+        Display.current().viewer.layers.clear()
+
+    def load_image(self):
+
+        image_data = imageio.imread(self.imageFile)
+        Display.current().viewer.add_image(image_data)
+        WidgetManager.inst().start()
+
+        MainWidget.run()
+
+    def image_dialog(self):
+        dialog = QFileDialog()
+        dialog.setWindowTitle("Open New File")
+        dialog.setFileMode(QFileDialog.AnyFile)
+
+        if dialog.exec_() == QFileDialog.Accepted:
+            selected_file = dialog.selectedFiles()[0]
+            self.imageFile = selected_file
+            print(f"Selected file: {selected_file}")
 
     def load_curve(self):
         WidgetManager.inst().start()
@@ -189,13 +251,13 @@ class MainWidget(QWidget):
         mainalgo.SkeletonApp.inst().et_export()
 
     def set_bi_thr(self):
-        self.biSText.setText("Binary: " + str(self.biSlider.value()))
+        self.biSText.setText("Binary Threshold: " + str(self.biSlider.value()))
 
     def set_bithr_lift(self):
         mainalgo.SkeletonApp.inst().reset_bithresh(self.biSlider.value())
 
     def set_va_thr(self):
-        self.vaSText.setText("Alpha: " + str(self.vaSlider.value()) + " degree")
+        self.vaSText.setText("VA Threshold: " + str(self.vaSlider.value()) + " degree")
 
     def set_vathr_lift(self):
         mainalgo.SkeletonApp.inst().reset_vathresh(self.vaSlider.value())
@@ -207,7 +269,7 @@ class MainWidget(QWidget):
         mainalgo.SkeletonApp.inst().et_prune()
 
     def set_et_thr(self):
-        self.etSText.setText("Threshold: " + str(self.etSlider.value()) + " %")
+        self.etSText.setText("ET Threshold: " + str(self.etSlider.value()) + " %")
 
     def set_etthr_lift(self):
         mainalgo.SkeletonApp.inst().reset_etthresh(self.etSlider.value())
