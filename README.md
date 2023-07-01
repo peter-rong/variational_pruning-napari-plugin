@@ -40,11 +40,16 @@ Once there's a color or prune visualization result, user can use the export butt
 
 "cd skeleton_plugin"
 
-"python3 execute.py <input_type> <input_file> <binary_threshold/fairing_number> <pruning_method> <pruning_treshhold> <visualization_method> <output_file>"
+"python3 execute.py <input_type> <input_file> <binary_threshold/fairing_number> <pruning_method> <pruning_threshhold> <visualization_method> <output_file>"
 
-'''ruby
-  test cell
-'''
+```ruby
+<input_type> : "image" or "graph" 
+<binary_threshold> : float between 0 and 255
+<fairing_number>: non-negative integer
+<pruning_method> : "VA" or "ET"
+<pruning_threshhold> : float between 0 and 90 for VA ; float between 0 and 1 for ET
+<visualization_method> : "color" or "prune"
+```
 
 Sample usage: "python3 execute.py image toy.png 0 VA 45 prune output.txt"
 
