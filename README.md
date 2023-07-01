@@ -27,6 +27,26 @@ You can access the plugin from napari's plugin dropdown, use the main widget for
 
 <img width="1331" alt="git image1" src="https://github.com/peter-rong/variational_pruning-napari-plugin/assets/71267071/21b818e5-1b0d-409e-af83-f452cab3c35c">
 
+Use the "select image file" or "select curve file" button to load in the input data. Image file should be a gray-scale image file and curve file should be a txt file. (Sample input files can be found inside skeleton_plugin/sample_inputs.
+
+After setting the wanted binary threshold or fairing number, choose Load Curve or Load Image based on your input file type. The boundary of the input file would be visible. Zoom and drag for best visualization purpose.
+
+The color and prune button shows different visualization result (color shows the entire medial axis and prune shows the resulting medial axis under the given threshold) and modifying the slider would update the result in real time.
+
+Once there's a color or prune visualization result, user can use the export button for the corresponding pruning method they selected and a output.txt file would be generated that records the resulting medial axis. 
+
+
+### command line operation
+
+"cd skeleton_plugin"
+
+"python3 execute.py <input_type> <input_file> <binary_threshold/fairing_number> <pruning_method> <pruning_treshhold> <visualization_method> <output_file>"
+
+'''ruby
+  test cell
+'''
+
+Sample usage: "python3 execute.py image toy.png 0 VA 45 prune output.txt"
 
 
 ## Reference
