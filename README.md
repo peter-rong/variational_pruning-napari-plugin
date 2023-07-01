@@ -37,12 +37,12 @@ Once there's a color or prune visualization result, user can use the export butt
 
 
 ### command line operation
+```
+cd skeleton_plugin
+python3 execute.py <input_type> <input_file> <binary_threshold/fairing_number> <pruning_method> <pruning_threshhold> <visualization_method> <output_file>
+```
 
-"cd skeleton_plugin"
-
-"python3 execute.py <input_type> <input_file> <binary_threshold/fairing_number> <pruning_method> <pruning_threshhold> <visualization_method> <output_file>"
-
-```ruby
+```
 <input_type> : "image" or "graph" 
 <binary_threshold> : float between 0 and 255
 <fairing_number>: non-negative integer
@@ -51,8 +51,10 @@ Once there's a color or prune visualization result, user can use the export butt
 <visualization_method> : "color" or "prune"
 ```
 
-Sample usage: "python3 execute.py image toy.png 0 VA 45 prune output.txt"
-
+Sample usage: 
+```
+python3 execute.py image toy.png 0 VA 45 prune output.txt
+```
 
 ## Reference
 This plugin is an extended work from the skeleton-plugin at: https://github.com/teeli8/skeleton_plugin
