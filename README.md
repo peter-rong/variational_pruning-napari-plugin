@@ -57,5 +57,5 @@ python3 execute.py image toy.png 0 VA 45 prune output.txt
 ```
 
 ## Reference
-This plugin is an extended work from the skeleton-plugin at: https://github.com/teeli8/skeleton_plugin
+This plugin is an extended work from the napari plugin at: https://github.com/teeli8/skeleton_plugin
 
