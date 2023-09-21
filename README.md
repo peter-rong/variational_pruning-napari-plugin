@@ -59,3 +59,6 @@ python3 execute.py image toy.png 0 VA 45 prune output.txt
 ## Reference
 This plugin is an extended work from the napari plugin at: https://github.com/teeli8/skeleton_plugin
 
+Raw algorithm code without visualization tool can be found at: https://github.com/peter-rong/dynamic_PCST
+
+
