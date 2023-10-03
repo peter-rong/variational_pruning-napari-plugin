@@ -6,6 +6,8 @@ This repo is a napari plugin that features variational pruning -- a new algorith
 
 This repo is also the code repo for paper: Variational Pruning of Medial Axes of Planar Shapes (Eurographics Symposium on Geometry Processing 2023)
 
+Raw algorithm code without visualization tool can be found at: https://github.com/peter-rong/dynamic_PCST
+
 ## Installment 
 
 ### local installment (recommended for developer)
@@ -58,7 +60,5 @@ python3 execute.py image toy.png 0 VA 45 prune output.txt
 
 ## Reference
 This plugin is an extended work from the napari plugin at: https://github.com/teeli8/skeleton_plugin
-
-Raw algorithm code without visualization tool can be found at: https://github.com/peter-rong/dynamic_PCST
 
 
