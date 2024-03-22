@@ -15,15 +15,15 @@ While importing from Version Control, set the local repo name to be "skeleton-pl
 
 Python 3.10.6 is recommended to use for locally configuring this plugin. 
 
-A list of packages used are included in the requirements.txt file. 
+A list of packages used are included in the requirements.txt file (Install using `pip install -r requirements.txt`).
 
-Once all the requirements are met, cd into your local repo and use the following command "pip install e ." to install the local plugin into napari.
+Once all the requirements are met, cd into your local repo and use the following command `pip install -e .` to install the local plugin into napari.
 
 ## Usage
 
 ### plugin usage
 
-Use command "napari" to open the napari interface
+Run `napari` to open the napari interface
 
 You can access the plugin from napari's plugin dropdown, use the main widget for visualization purpose. 
 
